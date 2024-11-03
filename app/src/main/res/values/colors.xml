@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="default_tile">#F2D0A4</color>
+
+    <color name="tile1">#FF4C4C</color>
+    <color name="tile2">#00C49A</color>
+    <color name="tile3">#0099FF</color>
+    <color name="tile4">#EA9010</color>
+    <color name="tile5">#BA4FA7</color>
+
+</resources>

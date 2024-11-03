@@ -1,0 +1,12 @@
+<!-- res/drawable/tile_background.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+
+    <!-- Outer border color -->
+    <stroke android:width="5dp" android:color="@android:color/white"/>
+
+    <!-- Corner radius for rounded edges -->
+    <corners android:radius="10dp"/>
+
+    <!-- Inner background color (to be set dynamically in your code) -->
+    <solid android:color="@android:color/transparent"/>
+</shape>
