@@ -1,7 +1,6 @@
 package com.example.voltorbflipmobile;
 
-import android.graphics.Color;
-import android.os.Build;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -86,115 +85,6 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
 
-    /*-------------------------
-
-            Game Tile View
-
-     -------------------------*/
-    public static class customGameTileView extends View {
-
-        private Bitmap frontImage, backImage;
-        boolean isFlipped = false;
-        boolean isFlipping = false;
-
-        Float rotationAngle = 0.0f;
-
-        ArrayList<Bitmap> animationFrames;
-
-        public customGameTileView(Context context) {
-            super(context);
-        }
-
-        public customGameTileView(Context context, AttributeSet attrs) {
-            super(context, attrs);
-        }
-
-
-        public void loadImages(Bitmap _front, Bitmap _back) {
-            frontImage = _front;
-            backImage = _back;
-
-            float width = getWidth();
-            float height = getHeight();
-
-            // Scale down the bitmap to fit
-            float scale = Math.min(width / (float) frontImage.getWidth(),
-                    height / (float) frontImage.getHeight());
-
-        }
-
-        public void tileClicked() {
-            if (isFlipped) return;
-            isFlipping = true;
-            rotationAngle = 0.0f;
-//            Log.d("GameTileViewer", "Tile clicked");
-        }
-
-        public void update() {
-            if (isFlipped) return;
-
-            if (isFlipping) {
-                rotationAngle += 10;
-
-                if (rotationAngle >= 180) {
-                    isFlipping = false;
-                    isFlipped = true;
-                    rotationAngle = 180.0f;
-                }
-
-
-            }
-        }
-
-
-        @Override
-        protected void onDraw(@NonNull Canvas canvas) {
-            super.onDraw(canvas);
-            this.update();
-
-            // Verify that images are loaded
-            if (frontImage == null || backImage == null) return;
-
-            // Save the current canvas state
-            canvas.save();
-
-            float width = getWidth();
-            float height = getHeight();
-
-            // Scale down the bitmap to fit
-            float scale = Math.min(width / (float) frontImage.getWidth(),
-                    height / (float) frontImage.getHeight());
-
-            // Set the scale for the canvas
-            canvas.scale(scale, scale); // Scale the canvas to fit the images
-
-            // Translate to the center of the view
-            canvas.translate(width / (2 * scale), height / (2 * scale));
-
-            // Apply rotation
-            canvas.rotate(rotationAngle + 180);
-
-            // Draw the appropriate image
-            if (rotationAngle < 90 || rotationAngle > 270) {
-                // Draw back image
-                canvas.drawBitmap(backImage, (float) -backImage.getWidth() / 2, (float) -backImage.getHeight() / 2, null);
-                invalidate();
-            } else {
-                // Draw front image
-                canvas.drawBitmap(frontImage, (float) -frontImage.getWidth() / 2, (float) -frontImage.getHeight() / 2, null);
-                invalidate();
-            }
-
-            // Restore the canvas state
-            canvas.restore();
-
-
-        }
-
-
-        // End of customGameTileViewer class
-    }
-
 
     /*-------------------------
 
@@ -202,26 +92,11 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     -------------------------*/
 
-//    public static class GameTileViewHolder extends RecyclerView.ViewHolder {
-//        public customGameTileView tileView;
-//
-//        public GameTileViewHolder(@NonNull View itemView) {
-//            super(itemView);
-//            tileView = itemView.findViewById(R.id.customGameTileViewer);
-//        }
-//
-//        public void bind(SecondFragment.gameTile tile) {
-//            tileView.loadImages(tile.getFrontImage(), tile.getBackImage());
-//            tileView.setOnClickListener(v -> tileView.tileClicked());
-//        }
-//    }
-
-
     public static class GameTileHolder extends RecyclerView.ViewHolder {
         private ImageView frontImage;
         private ImageView backImage;
 
-
+        private ImageView currentFrame;
 
         private boolean isFlipped = false;
 
@@ -230,14 +105,21 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             super(itemView);
             frontImage = itemView.findViewById(R.id.front_image);
             backImage = itemView.findViewById(R.id.back_image);
+            currentFrame = itemView.findViewById(R.id.animation_frame);
         }
 
         public void bind(SecondFragment.gameTile tile) {
             backImage.setImageBitmap(tile.getBackImage());
             frontImage.setImageBitmap(tile.getFrontImage());
+            int[] animationFrames = tile.getAnimationFrames();
+
+            currentFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
             backImage.setOnClickListener(v -> {
                 if (!isFlipped) {
                     flipTile();
+                    playAnimation(animationFrames, currentFrame);
+//                    currentFrame.setVisibility(View.GONE);
                 }
             });
         }
@@ -252,10 +134,29 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             }).start();
         }
+
+
+        private void playAnimation(int[] animationFrames, ImageView imageView) {
+            imageView.setVisibility(View.VISIBLE);
+            Handler handler = new Handler();
+            int frameDuration = 100;
+
+            for (int i = 0; i < animationFrames.length; i++) {
+                final int frameIndex = i;
+                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+
+
+                handler.postDelayed(() -> {
+                    imageView.setImageResource(animationFrames[frameIndex]);
+                    // Ensure proper scaling
+//                    imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                }, (long) i * frameDuration);
+            }
+
+            handler.postDelayed(() -> imageView.setVisibility(View.GONE), (long) animationFrames.length * frameDuration);
+        }
+
     }
-
-
-
 
 
 
@@ -291,7 +192,6 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             Log.d(SecondFragment.DEBUG_TAG, "Extracted Color" + tile.getColor());
             try {
-                int color = tile.getColor();
                 container.setBackgroundColor(tile.getColor());
             } catch (Exception e) {
                 Log.d(SecondFragment.DEBUG_TAG, "Error: " + e.getMessage());

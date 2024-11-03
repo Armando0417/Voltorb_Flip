@@ -49,12 +49,25 @@ public class SecondFragment extends Fragment {
             Color.YELLOW
     };
 
+    private final HashMap<String, int[] > animationTable = new HashMap<>();
+
+
+    // ================================================================
+    //                      Interface Tile
+    // ================================================================
+
     public interface Tile {
         int getWidth();
         int getHeight();
         Pair<Integer, Integer> getPosition();
         Pair<Integer, Integer> getRowCol();
-    }
+
+    } //================================================================
+
+
+    // ================================================================
+    //                      Class gameTile
+    // ================================================================
 
     public class gameTile implements Tile {
         tileTypes value;
@@ -64,63 +77,44 @@ public class SecondFragment extends Fragment {
         Float rotationAngle;
         boolean flipped, playAnimation, isFlipping = false;
         Bitmap frontImage, backImage;
-        ArrayList<Bitmap> animationFrames;
-
-
-
+        int[] animationFrames;
 
         gameTile(tileTypes _value, Pair<Integer, Integer> _position, int _width, int _height) {
             this.value = _value;
             this.position = _position;
             this.width = _width;
             this.height = _height;
-
-            if (imageTable.get(4) == null) {
-                Log.d("Missing Image", "Image Missing");
-            }
             backImage = imageTable.get(4);
-//            borderImage = BitmapFactory.decodeResource(getResources(), R.drawable.border);
-
         }
-
         void set_row_col(int _row, int _col) {
             row_col = new Pair<>(_row, _col);
         }
 
-        Pair<Integer, Integer> get_row_col() {
+    // Getters
+        public Pair<Integer, Integer> get_row_col() {
             return row_col;
         }
-
-
         @Override
         public int getWidth() {
             return this.width;
         }
-
         @Override
         public int getHeight() {
             return this.height;
         }
-
         @Override
         public Pair<Integer, Integer> getPosition() {
             return this.position;
         }
-
         @Override
         public Pair<Integer, Integer> getRowCol() {
             return this.row_col;
         }
-
         Integer getNumericValue() {
             return value.ordinal();
         }
         tileTypes getType() {
             return value;
-        }
-
-        void setAnimationFrames(ArrayList<Bitmap> _animationFrames) {
-            animationFrames = _animationFrames;
         }
 
         void update() {
@@ -144,33 +138,53 @@ public class SecondFragment extends Fragment {
             return backImage;
         }
 
-        void tileClicked() {
-            isFlipping = true;
-            rotationAngle = 0.0F;
-//            Log.d("Tile Clicked", "");
-//            Log.d("Value", String.valueOf(value));
+        int[] getAnimationFrames() {
+            return animationFrames;
         }
 
 
 
         void setValueImage(tileTypes _value) {
             value = _value;
-            if (value == tileTypes.VOLTORB) {
-                frontImage = imageTable.get(0);
-//                frontImage = BitmapFactory.decodeResource(getResources(), R.drawable.voltorb);
-            }
-            else if (value == tileTypes.ONE) {
-                frontImage = imageTable.get(1);
-//                frontImage = BitmapFactory.decodeResource(getResources(), R.drawable.one);
-            }
-            else if (value == tileTypes.TWO) {
-                frontImage = imageTable.get(2);
 
+            switch (value){
+                case VOLTORB:
+                    frontImage = imageTable.get(0);
+                    break;
+                case ONE:
+                    frontImage = imageTable.get(1);
+                    break;
+                case TWO:
+                    frontImage = imageTable.get(2);
+                    break;
+                case THREE:
+                    frontImage = imageTable.get(3);
+                    break;
+                default:
+                    frontImage = imageTable.get(4);
+                    break;
             }
-            else if (value == tileTypes.THREE) {
-                frontImage = imageTable.get(3);
 
+            if (value.ordinal() > 0) {
+                animationFrames = animationTable.get("points");
             }
+            else {
+                animationFrames = animationTable.get("explosion");
+            }
+
+
+//            if (value == tileTypes.VOLTORB) {
+//                frontImage = imageTable.get(0);
+//            }
+//            else if (value == tileTypes.ONE) {
+//                frontImage = imageTable.get(1);
+//            }
+//            else if (value == tileTypes.TWO) {
+//                frontImage = imageTable.get(2);
+//            }
+//            else if (value == tileTypes.THREE) {
+//                frontImage = imageTable.get(3);
+//            }
         }
 
     }
@@ -231,19 +245,7 @@ public class SecondFragment extends Fragment {
                     break;
             }
 
-
-
-//                tileColor = colorTable.get(row_col.first);
-//
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                    tileColor = Color.valueOf(Colors[row_col.second]);
-//                }
-//            }
-//            else {
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                    tileColor = Color.valueOf(Colors[row_col.first]);
-//                }
-            }
+        }
 
 
         int getTotalPoints() {
@@ -349,18 +351,6 @@ public class SecondFragment extends Fragment {
         }
 
 
-//        public int[] getColor() {
-//
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                    return tileColor.toArgb();
-//                }
-//            }
-//            catch (Exception e) {
-//                Log.d(ERROR_TAG, "Error extracting Color");
-//            }
-//            return -1;
-//        }
-
     public int getColor() {
             return Color.rgb(tileColor[0], tileColor[1], tileColor[2]);
     }
@@ -371,10 +361,11 @@ public class SecondFragment extends Fragment {
 
 
 
+    /*
 
+        Continuation of Second Fragment
 
-
-
+     */
     private FragmentSecondBinding binding;
 
     private RecyclerView recyclerView;
@@ -407,13 +398,20 @@ public class SecondFragment extends Fragment {
 
         imageTable.put(5, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb_mini));
 
+//        imageTable.put(-1, BitmapFactory.decodeResource(getResources(), R.drawable.nullImage));
+
+
+        animationTable.put("points", new int[]{R.drawable.animation_points_0, R.drawable.animation_points_1, R.drawable.animation_points_2, R.drawable.animation_points_3});
+        animationTable.put("explosion", new int[]{R.drawable.animation_explosion_0_final, R.drawable.animation_explosion_1_final, R.drawable.animation_explosion_2_final, R.drawable.animation_explosion_3_final,
+                                                    R.drawable.animation_explosion_4_final, R.drawable.animation_explosion_5_final, R.drawable.animation_explosion_6_final, R.drawable.animation_explosion_7_final,
+                                                    R.drawable.animation_explosion_8_final});
+
+
         colorTable.put(colorTypes.ROSE, new int[]{220, 117, 143});
         colorTable.put(colorTypes.MINT, new int[]{0, 204, 163});
         colorTable.put(colorTypes.LAKE_BLUE, new int[]{119, 141, 169});
         colorTable.put(colorTypes.WISTERA, new int[]{180, 160, 229});
         colorTable.put(colorTypes.GOLD, new int[]{243, 176, 43});
-
-
 
 
         createGrid(screenWidth);
@@ -515,6 +513,7 @@ public class SecondFragment extends Fragment {
 
                     gameTile currTile = (gameTile) finalBoard.get(row).get(col);
                     currTile.setValueImage(tileTypes.values()[testBoard.get(row).get(col)]);
+
                     totalGameTileCount++;
                 }
             }
@@ -535,19 +534,7 @@ public class SecondFragment extends Fragment {
             }
 
 
-//            for (ArrayList<Tile> row : finalBoard) {
-//                Log.d("Current Row", "[ " + row.toString() + " ]");
-//
-//            }
-
-
-//            Log.d("Total Game Tiles: ", String.valueOf(totalGameTileCount));
-//            Log.d("Total Info Tiles: ", String.valueOf(totalInfoTileCount));
-
         }
-
-
-
 
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
@@ -563,14 +550,8 @@ public class SecondFragment extends Fragment {
           recyclerView.setAdapter(adapter);
         }
 
-
-
         else {
-//        if (gameBoard != null && !gameBoard.isEmpty() && gameBoard.get(0) != null && !gameBoard.get(0).isEmpty()) {
-//            gametile_adapter adapter = new gametile_adapter(gameBoard);
-//
-//            recyclerView.setAdapter(adapter);
-//        }
+
             // Log an error or handle it accordingly
             Log.e("SecondFragment", "Game board is empty or null.");
 

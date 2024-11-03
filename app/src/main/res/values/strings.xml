@@ -11,4 +11,9 @@
     <string name="tile_value_here">tile Value Here</string>
     <string name="point_values">insert value\n</string>
     <string name="insert_bombs">insert bombs</string>
+    <string name="this_will_be_the_animation" />
+    <string name="this_is_to_extend_outside_the_tile" />
+    <string name="backImage">back part of the Game Tiles</string>
+    <string name="frontImage">Front part of Game Tiles</string>
+    <string name="animationFrame">Placeholder to animate the tile effects</string>
 </resources>
