@@ -4,6 +4,24 @@
     android:layout_height="match_parent">
 
 
+    <FrameLayout
+        android:id="@+id/animation_overlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:translationZ="10000dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/animation_frame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"

@@ -5,11 +5,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -23,6 +26,7 @@ import com.example.voltorbflipmobile.databinding.FragmentSecondBinding;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.util.List;
 
 
 public class SecondFragment extends Fragment {
@@ -50,6 +54,12 @@ public class SecondFragment extends Fragment {
     };
 
     private final HashMap<String, int[] > animationTable = new HashMap<>();
+
+
+
+    private FrameLayout animationOverlay;
+
+
 
 
     // ================================================================
@@ -226,7 +236,7 @@ public class SecondFragment extends Fragment {
             else {
                 relevantValue = row_col.first;
             }
-            Log.d(DEBUG_TAG, "Value of relevantValue:" + relevantValue);
+//            Log.d(DEBUG_TAG, "Value of relevantValue:" + relevantValue);
             switch (relevantValue) {
                 case 0:
                     tileColor = colorTable.get(colorTypes.ROSE);
@@ -309,7 +319,7 @@ public class SecondFragment extends Fragment {
                 int myRow = row_col.first;
                 for (int currCol = 0; currCol < BOARD_SIZE; currCol++) {
                     try {
-                        Log.d(DEBUG_TAG, "Verifying tile at position [" + myRow + ", " + currCol + "]");
+//                        Log.d(DEBUG_TAG, "Verifying tile at position [" + myRow + ", " + currCol + "]");
 
                         gameTile currTile = (gameTile) _board.get(myRow).get(currCol);
                         if (currTile.getNumericValue() > 0) {
@@ -369,6 +379,8 @@ public class SecondFragment extends Fragment {
     private FragmentSecondBinding binding;
 
     private RecyclerView recyclerView;
+    private ImageView animationFrame;
+
 
     private final HashMap<Integer, Bitmap> imageTable = new HashMap<>();
     private final HashMap<colorTypes, int[]> colorTable = new HashMap<>();
@@ -387,6 +399,17 @@ public class SecondFragment extends Fragment {
     ) {
 
         binding = FragmentSecondBinding.inflate(inflater, container, false);
+        View view = binding.getRoot();
+
+        try {
+            animationOverlay = view.findViewById(R.id.animation_overlay);
+            animationFrame = view.findViewById(R.id.animation_frame);
+        }
+        catch (Exception e) {
+            Log.d(ERROR_TAG, "Error: " + e.getMessage());
+        }
+
+
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
 
         imageTable.put(0, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb));
@@ -419,6 +442,79 @@ public class SecondFragment extends Fragment {
 
         return binding.getRoot();
     }
+
+
+    public void playOverlayAnimation(int[] animationFrames, View tileView, gameTile currentTile) {
+        // Get tile's position on the screen
+        int[] location = new int[2];
+        tileView.getLocationOnScreen(location);
+        int tileX = location[0];
+        int tileY = location[1];
+
+        int[] overlayLocation = new int[2];
+        animationOverlay.getLocationOnScreen(overlayLocation);
+        int tileRelativeX = tileX - overlayLocation[0];
+        int tileRelativeY = tileY - overlayLocation[1];
+
+        // Preload all bitmaps
+        List<Bitmap> preloadedFrames = new ArrayList<>();
+        for (int frameResId : animationFrames) {
+            Bitmap bitmap = BitmapFactory.decodeResource(requireContext().getResources(), frameResId);
+            preloadedFrames.add(bitmap);
+        }
+
+        // Create ImageView for animation
+        ImageView animationView = new ImageView(requireContext());
+        animationOverlay.setVisibility(View.VISIBLE);
+        animationOverlay.addView(animationView);
+
+        // Initialize handler and frame duration
+        Handler handler = new Handler();
+        int frameDuration = 500;
+
+        // Start animation loop
+        for (int i = 0; i < animationFrames.length; i++) {
+            final int frameIndex = i;
+            handler.postDelayed(() -> {
+                // Resize the animationView based on the frame index
+                FrameLayout.LayoutParams params;
+                Bitmap currentBitmap = preloadedFrames.get(frameIndex);
+
+                    if (frameIndex >= 3 && currentTile.getNumericValue() == 0) {
+                        params = new FrameLayout.LayoutParams(tileView.getWidth() * 3, tileView.getHeight() * 3);
+                    }
+                    else {
+                        params = new FrameLayout.LayoutParams(tileView.getWidth(), tileView.getHeight());
+                    }
+
+
+                // Calculate new center position to keep animation centered
+                int offsetX = (params.width - tileView.getWidth()) / 2;
+                int offsetY = (params.height - tileView.getHeight()) / 2;
+                params.leftMargin = tileRelativeX - offsetX;
+                params.topMargin = tileRelativeY - offsetY;
+                animationView.setLayoutParams(params);
+
+                // Set the preloaded bitmap for the current frame
+                animationView.setImageBitmap(currentBitmap);
+
+            }, (long) i * frameDuration);
+        }
+
+        // Cleanup after animation completes
+        handler.postDelayed(() -> {
+            animationOverlay.removeView(animationView);
+            for (Bitmap bitmap : preloadedFrames) {
+                bitmap.recycle();
+            }
+            preloadedFrames.clear();
+        }, animationFrames.length * frameDuration);
+    }
+
+
+
+
+
 
     private void createGrid(int screenWidth) {
 
@@ -546,16 +642,14 @@ public class SecondFragment extends Fragment {
         // Make sure gameBoard is not null and has items
 
         if (finalBoard != null && !finalBoard.isEmpty()) {
-          TileAdapter adapter = new TileAdapter(finalBoard);
+          TileAdapter adapter = new TileAdapter(finalBoard, this);
           recyclerView.setAdapter(adapter);
         }
 
         else {
-
-            // Log an error or handle it accordingly
             Log.e("SecondFragment", "Game board is empty or null.");
-
         }
+
         // Update the game Tiles
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {

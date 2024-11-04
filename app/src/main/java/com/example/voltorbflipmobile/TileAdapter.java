@@ -28,9 +28,11 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int GAME_TILE = 0;
     private static final int INFO_TILE = 1;
+    private final SecondFragment fragment;
 
-    public TileAdapter(ArrayList<ArrayList<SecondFragment.Tile>> board) {
+    public TileAdapter(ArrayList<ArrayList<SecondFragment.Tile>> board, SecondFragment fragment) {
         this.board = board;
+        this.fragment = fragment;
     }
 
     @Override
@@ -66,16 +68,17 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         if (holder instanceof GameTileHolder) {
-            ((GameTileHolder) holder).bind((SecondFragment.gameTile) board.get(row).get(col));
-//            Log.d("TileAdapter", "Created game tile at position: " + position);
-        } else {
+            ((GameTileHolder) holder).bind((SecondFragment.gameTile) board.get(row).get(col), fragment);
+
+        }
+        else {
             if (holder instanceof customInfoHolder) {
-//                Log.d("TileAdapter", "It is a info tile at position: " + position);
+
                 ((customInfoHolder) holder).bind((SecondFragment.infoTile) board.get(row).get(col)); // Bind infoTile data
-            } else {
+            }
+            else {
                 Log.d("TileAdapter", "Invalid view holder type");
             }
-//            Log.d("TileAdapter", "Created info tile at position: " + position);
         }
     }
 
@@ -93,10 +96,10 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     -------------------------*/
 
     public static class GameTileHolder extends RecyclerView.ViewHolder {
-        private ImageView frontImage;
-        private ImageView backImage;
+        private final ImageView frontImage;
+        private final ImageView backImage;
 
-        private ImageView currentFrame;
+        private final ImageView currentFrame;
 
         private boolean isFlipped = false;
 
@@ -108,7 +111,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             currentFrame = itemView.findViewById(R.id.animation_frame);
         }
 
-        public void bind(SecondFragment.gameTile tile) {
+        public void bind(SecondFragment.gameTile tile, SecondFragment currFragment) {
             backImage.setImageBitmap(tile.getBackImage());
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
@@ -118,8 +121,12 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             backImage.setOnClickListener(v -> {
                 if (!isFlipped) {
                     flipTile();
-                    playAnimation(animationFrames, currentFrame);
-//                    currentFrame.setVisibility(View.GONE);
+                    try {
+                        currFragment.playOverlayAnimation(animationFrames, itemView, tile);
+
+                    } catch (Exception e) {
+                        Log.d(SecondFragment.ERROR_TAG, "Error: " + e.getMessage());
+                    }
                 }
             });
         }
@@ -133,27 +140,6 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 isFlipped = true;
 
             }).start();
-        }
-
-
-        private void playAnimation(int[] animationFrames, ImageView imageView) {
-            imageView.setVisibility(View.VISIBLE);
-            Handler handler = new Handler();
-            int frameDuration = 100;
-
-            for (int i = 0; i < animationFrames.length; i++) {
-                final int frameIndex = i;
-                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-
-
-                handler.postDelayed(() -> {
-                    imageView.setImageResource(animationFrames[frameIndex]);
-                    // Ensure proper scaling
-//                    imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                }, (long) i * frameDuration);
-            }
-
-            handler.postDelayed(() -> imageView.setVisibility(View.GONE), (long) animationFrames.length * frameDuration);
         }
 
     }
