@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
         background_song = MediaPlayer.create(this, R.raw.background_song);
         background_song.setLooping(true);
-        background_song.setVolume(0.5f, 0.5f);
+        background_song.setVolume(0.3f, 0.3f);
 
 
 

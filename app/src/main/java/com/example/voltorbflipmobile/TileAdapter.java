@@ -49,7 +49,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (viewType == GAME_TILE) {
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.gametile_layout, parent, false);
             return new GameTileHolder(view);
-        } else {
+        }
+        else {
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.infotile_layout, parent, false);
             return new CustomInfoHolder(view);
         }
