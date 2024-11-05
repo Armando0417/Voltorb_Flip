@@ -1,6 +1,7 @@
 package com.example.voltorbflipmobile;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,16 +20,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 
 
-
-
-
-
 public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final ArrayList<ArrayList<SecondFragment.Tile>> board;
 
     private static final int GAME_TILE = 0;
     private static final int INFO_TILE = 1;
-    private final SecondFragment fragment;
+    public final SecondFragment fragment;
 
     public TileAdapter(ArrayList<ArrayList<SecondFragment.Tile>> board, SecondFragment fragment) {
         this.board = board;
@@ -54,7 +51,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             return new GameTileHolder(view);
         } else {
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.infotile_layout, parent, false);
-            return new customInfoHolder(view);
+            return new CustomInfoHolder(view);
         }
     }
 
@@ -72,11 +69,10 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         }
         else {
-            if (holder instanceof customInfoHolder) {
+            if (holder instanceof CustomInfoHolder) {
 
-                ((customInfoHolder) holder).bind((SecondFragment.infoTile) board.get(row).get(col)); // Bind infoTile data
-            }
-            else {
+                ((CustomInfoHolder) holder).bind((SecondFragment.infoTile) board.get(row).get(col)); // Bind infoTile data
+            } else {
                 Log.d("TileAdapter", "Invalid view holder type");
             }
         }
@@ -95,13 +91,15 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     -------------------------*/
 
-    public static class GameTileHolder extends RecyclerView.ViewHolder {
+    public class GameTileHolder extends RecyclerView.ViewHolder {
         private final ImageView frontImage;
         private final ImageView backImage;
 
         private final ImageView currentFrame;
 
         private boolean isFlipped = false;
+        private boolean isAnimating = false;
+
 
 
         public GameTileHolder(@NonNull View itemView) {
@@ -119,15 +117,26 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             currentFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
             backImage.setOnClickListener(v -> {
-                if (!isFlipped) {
-                    flipTile();
-                    try {
-                        currFragment.playOverlayAnimation(animationFrames, itemView, tile);
-
-                    } catch (Exception e) {
-                        Log.d(SecondFragment.ERROR_TAG, "Error: " + e.getMessage());
-                    }
+                if (isAnimating || isFlipped) {
+                    Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked but is still playing");
                 }
+                else {
+                    Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked and Animation Started");
+                    isAnimating = true;
+                    flipTile();
+
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        try {
+                            currFragment.playOverlayAnimation(animationFrames, itemView, tile);
+                        } catch (Exception e) {
+                            Log.d(SecondFragment.ERROR_TAG, "Error: " + e.getMessage());
+                        } finally {
+                            Log.d(SecondFragment.DEBUG_TAG, "Animation Ended");
+                            currFragment.isAnimating = false;
+                            isAnimating = false;
+                        }
+                    }, 200);
+                    }
             });
         }
 
@@ -136,8 +145,10 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 backImage.setVisibility(View.GONE);
                 frontImage.setVisibility(View.VISIBLE);
                 frontImage.setRotation(0);
-                frontImage.animate().rotationY(0).setDuration(200);
-                isFlipped = true;
+                frontImage.animate().rotationY(0).setDuration(150).withEndAction(() -> {
+                    isFlipped = true;
+                    fragment.playSound(fragment.flipTileSfx);
+                });
 
             }).start();
         }
@@ -145,19 +156,18 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
 
-
     /*-------------------------
 
         Info Tile View Holder
 
     -------------------------*/
-    public static class customInfoHolder extends RecyclerView.ViewHolder {
+    public class CustomInfoHolder extends RecyclerView.ViewHolder {
         TextView pointCountView;
         TextView bombCountView;
         LinearLayout container;
         ImageView miniVoltorb;
 
-        public customInfoHolder(@NonNull View itemView) {
+        public CustomInfoHolder(@NonNull View itemView) {
             super(itemView);
             pointCountView = itemView.findViewById(R.id.total_points);
             bombCountView = itemView.findViewById(R.id.total_bombs);
@@ -166,17 +176,13 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         public void bind(SecondFragment.infoTile tile) {
-            pointCountView = itemView.findViewById(R.id.total_points);
             pointCountView.setText(String.valueOf(tile.getTotalPoints()));
 
-            bombCountView = itemView.findViewById(R.id.total_bombs);
             bombCountView.setText(String.valueOf(tile.getTotalBombs()));
 
             miniVoltorb.setImageBitmap(tile.getMiniVoltorb());
             miniVoltorb.bringToFront();
 
-
-            Log.d(SecondFragment.DEBUG_TAG, "Extracted Color" + tile.getColor());
             try {
                 container.setBackgroundColor(tile.getColor());
             } catch (Exception e) {

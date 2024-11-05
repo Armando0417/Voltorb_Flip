@@ -1,11 +1,18 @@
 package com.example.voltorbflipmobile;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -23,10 +30,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.voltorbflipmobile.databinding.FragmentSecondBinding;
 
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 
 
 public class SecondFragment extends Fragment {
@@ -36,6 +46,8 @@ public class SecondFragment extends Fragment {
      */
     public final static String  DEBUG_TAG = "Debugging Purposes";
     public final static String  ERROR_TAG = "Error";
+
+    public final static String SUCCESS_TAG = "Success!";
 
     enum tileTypes {
         VOLTORB, ONE, TWO, THREE
@@ -140,7 +152,6 @@ public class SecondFragment extends Fragment {
             }
         }
 
-
         Bitmap getFrontImage() {
             return frontImage;
         }
@@ -151,7 +162,6 @@ public class SecondFragment extends Fragment {
         int[] getAnimationFrames() {
             return animationFrames;
         }
-
 
 
         void setValueImage(tileTypes _value) {
@@ -182,19 +192,6 @@ public class SecondFragment extends Fragment {
                 animationFrames = animationTable.get("explosion");
             }
 
-
-//            if (value == tileTypes.VOLTORB) {
-//                frontImage = imageTable.get(0);
-//            }
-//            else if (value == tileTypes.ONE) {
-//                frontImage = imageTable.get(1);
-//            }
-//            else if (value == tileTypes.TWO) {
-//                frontImage = imageTable.get(2);
-//            }
-//            else if (value == tileTypes.THREE) {
-//                frontImage = imageTable.get(3);
-//            }
         }
 
     }
@@ -378,12 +375,12 @@ public class SecondFragment extends Fragment {
      */
     private FragmentSecondBinding binding;
 
-    private RecyclerView recyclerView;
-    private ImageView animationFrame;
-
 
     private final HashMap<Integer, Bitmap> imageTable = new HashMap<>();
     private final HashMap<colorTypes, int[]> colorTable = new HashMap<>();
+
+    private final HashMap<Integer, List<Bitmap>> decodedAnimTable = new HashMap<>();
+
 
     private ArrayList<ArrayList<Tile>> finalBoard;
 
@@ -391,6 +388,39 @@ public class SecondFragment extends Fragment {
     private static final Integer TOTAL_SIZE = 6;
 
 
+
+    // ================================================================
+    //                       Music
+    // ================================================================
+
+    public final HashMap<Integer, Integer> soundTable = new HashMap<>();
+    private SoundPool soundpool;
+    public final Integer flipTileSfx = 1;
+    public final Integer increasePointSfx = 2;
+    public final Integer explosionSfx = 3;
+
+    public final Integer storingPointsSfx = 4;
+    public final Integer levelCompleteSfx = 5;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Set up StrictMode to detect disk reads/writes and network operations
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectAll() // Or .detectAll() for all detectable problems
+                .penaltyLog()
+                .build());
+
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects()
+                .penaltyLog()
+                .penaltyDeath() // This will crash the app on detected issues
+                .build());
+    }
 
     @Override
     public View onCreateView(
@@ -403,7 +433,6 @@ public class SecondFragment extends Fragment {
 
         try {
             animationOverlay = view.findViewById(R.id.animation_overlay);
-            animationFrame = view.findViewById(R.id.animation_frame);
         }
         catch (Exception e) {
             Log.d(ERROR_TAG, "Error: " + e.getMessage());
@@ -412,39 +441,223 @@ public class SecondFragment extends Fragment {
 
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
 
-        imageTable.put(0, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb));
-        imageTable.put(1, BitmapFactory.decodeResource(getResources(), R.drawable.one));
-        imageTable.put(2, BitmapFactory.decodeResource(getResources(), R.drawable.two));
-        imageTable.put(3, BitmapFactory.decodeResource(getResources(), R.drawable.three));
+        soundpool = new SoundPool(5, AudioManager.STREAM_MUSIC, 100);
+        soundpool = new SoundPool.Builder().setMaxStreams(5).build();
 
-        imageTable.put(4, BitmapFactory.decodeResource(getResources(), R.drawable.big_back_of_tile));
-
-        imageTable.put(5, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb_mini));
-
-//        imageTable.put(-1, BitmapFactory.decodeResource(getResources(), R.drawable.nullImage));
-
-
-        animationTable.put("points", new int[]{R.drawable.animation_points_0, R.drawable.animation_points_1, R.drawable.animation_points_2, R.drawable.animation_points_3});
-        animationTable.put("explosion", new int[]{R.drawable.animation_explosion_0_final, R.drawable.animation_explosion_1_final, R.drawable.animation_explosion_2_final, R.drawable.animation_explosion_3_final,
-                                                    R.drawable.animation_explosion_4_final, R.drawable.animation_explosion_5_final, R.drawable.animation_explosion_6_final, R.drawable.animation_explosion_7_final,
-                                                    R.drawable.animation_explosion_8_final});
-
-
-        colorTable.put(colorTypes.ROSE, new int[]{220, 117, 143});
-        colorTable.put(colorTypes.MINT, new int[]{0, 204, 163});
-        colorTable.put(colorTypes.LAKE_BLUE, new int[]{119, 141, 169});
-        colorTable.put(colorTypes.WISTERA, new int[]{180, 160, 229});
-        colorTable.put(colorTypes.GOLD, new int[]{243, 176, 43});
-
+        loadFiles();
 
         createGrid(screenWidth);
+
+
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity != null) {
+            mainActivity.startMusic();
+        }
+
+//        background_song = MediaPlayer.create(getContext(), R.raw.background_song);
+//        background_song.setLooping(true);
+
 
 
         return binding.getRoot();
     }
 
 
+    public void playSound(Integer soundKey) {
+        try {
+            soundpool.play(soundTable.get(soundKey), 1, 1, 0, 0, 1);
+        }
+        catch (Exception e) {
+            Log.d(ERROR_TAG, "Error: " + e.getMessage());
+        }
+    }
+
+
+    private void loadFiles() {
+        CountDownLatch latch = new CountDownLatch(3);
+
+        try {
+            new Thread(() -> {
+                imageTable.put(0, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb));
+                imageTable.put(1, BitmapFactory.decodeResource(getResources(), R.drawable.one));
+                imageTable.put(2, BitmapFactory.decodeResource(getResources(), R.drawable.two));
+                imageTable.put(3, BitmapFactory.decodeResource(getResources(), R.drawable.three));
+                imageTable.put(4, BitmapFactory.decodeResource(getResources(), R.drawable.big_back_of_tile));
+                imageTable.put(5, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb_mini));
+
+                // Loading color types
+                colorTable.put(colorTypes.ROSE, new int[]{220, 117, 143});
+                colorTable.put(colorTypes.MINT, new int[]{0, 204, 163});
+                colorTable.put(colorTypes.LAKE_BLUE, new int[]{119, 141, 169});
+                colorTable.put(colorTypes.WISTERA, new int[]{180, 160, 229});
+                colorTable.put(colorTypes.GOLD, new int[]{243, 176, 43});
+
+                latch.countDown();
+            }).start();
+
+            new Thread(()-> {
+               // Loading animation resources
+               animationTable.put("points", new int[]{
+                       R.drawable.animation_points_0,
+                       R.drawable.animation_points_1,
+                       R.drawable.animation_points_2,
+                       R.drawable.animation_points_3
+               });
+               animationTable.put("explosion", new int[]{
+                       R.drawable.animation_explosion_0_final,
+                       R.drawable.animation_explosion_1_final,
+                       R.drawable.animation_explosion_2_final,
+                       R.drawable.animation_explosion_3_final,
+                       R.drawable.animation_explosion_4_final,
+                       R.drawable.animation_explosion_5_final,
+                       R.drawable.animation_explosion_6_final,
+                       R.drawable.animation_explosion_7_final,
+                       R.drawable.animation_explosion_8_final
+               });
+                List<Bitmap> decodedPointFrames = new ArrayList<>();
+                for (int frameResId : Objects.requireNonNull(animationTable.get("points"))) {
+                    decodedPointFrames.add(BitmapFactory.decodeResource(getResources(), frameResId));
+                }
+                decodedAnimTable.put(1, decodedPointFrames);
+                List<Bitmap> decodedExplosionFrames = new ArrayList<>();
+                for (int frameResId : Objects.requireNonNull(animationTable.get("explosion"))) {
+                    decodedExplosionFrames.add(BitmapFactory.decodeResource(getResources(), frameResId));
+                }
+                decodedAnimTable.put(0, decodedExplosionFrames);
+
+               latch.countDown();
+           }).start();
+
+            new Thread(() -> {
+                soundTable.put(explosionSfx, soundpool.load(getContext(), R.raw.explosion_sfx, 1));
+                soundTable.put(increasePointSfx, soundpool.load(getContext(), R.raw.increase_point_sfx, 1));
+                soundTable.put(flipTileSfx, soundpool.load(getContext(), R.raw.flip_tile_sfx, 1));
+                soundTable.put(storingPointsSfx, soundpool.load(getContext(), R.raw.storing_points_sfx, 1));
+                soundTable.put(levelCompleteSfx, soundpool.load(getContext(), R.raw.level_complete_sfx, 1));
+
+                latch.countDown();
+            }).start();
+
+
+            latch.await();
+
+        } catch (Exception e) {
+            Log.d(ERROR_TAG, "Error: " + e.getMessage());
+        }
+        finally {
+            Log.d(SUCCESS_TAG, "Images loaded successfully");
+
+             int var = Objects.requireNonNull(decodedAnimTable.get(0)).isEmpty() ? Log.d(ERROR_TAG, "Decoded Point frames are empty") : Log.d(SUCCESS_TAG, "Decoded frames loaded successfully");
+
+             int var2 = Objects.requireNonNull(decodedAnimTable.get(1)).isEmpty() ? Log.d(ERROR_TAG, "Decoded Explosion frames are empty") : Log.d(SUCCESS_TAG, "Decoded frames loaded successfully");
+
+
+        }
+    }
+
+    public boolean isAnimating = false;
+//    public void playOverlayAnimation(int[] animationFrames, View tileView, gameTile currentTile) {
+//
+//        if (isAnimating) {
+//            Log.d("DEBUG", "Animation is already running.");
+//            return;
+//        }
+//        isAnimating = true;
+//
+//        // Get tile's position on the screen
+//        int[] location = new int[2];
+//        tileView.getLocationOnScreen(location);
+//        int tileX = location[0];
+//        int tileY = location[1];
+//
+//        int[] overlayLocation = new int[2];
+//        animationOverlay.getLocationOnScreen(overlayLocation);
+//        int tileRelativeX = tileX - overlayLocation[0];
+//        int tileRelativeY = tileY - overlayLocation[1];
+//
+//        CountDownLatch latch = new CountDownLatch(1);
+//
+//        new Thread(() -> {
+//            List<Bitmap> preloadedFrames;
+//            if (currentTile.getNumericValue() == 0) {
+//                Log.d("DEBUG", "Animation is for Explosion");
+//                preloadedFrames = new ArrayList<>(decodedAnimTable.get(0));
+//            }
+//            else {
+//                Log.d("DEBUG", "Animation is for Points");
+//                preloadedFrames = new ArrayList<>(decodedAnimTable.get(1));
+//            }
+//
+//
+//            // Ensure the preloaded frames are not null before continuing
+//            if (preloadedFrames != null && !preloadedFrames.isEmpty()) {
+//                Log.d("DEBUG", "Preloaded frames loaded successfully.");
+//                latch.countDown();
+//            } else {
+//                // Handle the case where no frames were loaded (optional)
+//                Log.d("DEBUG", "No preloaded frames available.");
+//                isAnimating = false; // Reset animation flag
+//                return;
+//            }
+//
+//
+//            requireActivity().runOnUiThread(() -> {
+//                // Create ImageView for animation
+//                ImageView animationView = new ImageView(requireContext());
+//                animationOverlay.setVisibility(View.VISIBLE);
+//                animationOverlay.addView(animationView);
+//
+//                // Create a ValueAnimator to control the frame changes
+//                ValueAnimator animator = ValueAnimator.ofInt(0, animationFrames.length - 1);
+//                animator.setDuration(animationFrames.length * 100L); // Adjust the duration as needed
+//                animator.addUpdateListener(animation -> {
+//                    int frameIndex = (int) animation.getAnimatedValue();
+//                    Bitmap currentBitmap = null;
+//                    currentBitmap = preloadedFrames.get(frameIndex);
+//
+//                    FrameLayout.LayoutParams params = getLayoutParams(tileView, currentTile, frameIndex);
+//
+//                    // Calculate new center position to keep animation centered
+//                    int offsetX = (params.width - tileView.getWidth()) / 2;
+//                    int offsetY = (params.height - tileView.getHeight()) / 2;
+//                    params.leftMargin = tileRelativeX - offsetX;
+//                    params.topMargin = tileRelativeY - offsetY;
+//                    animationView.setLayoutParams(params);
+//
+//                    // Set the preloaded bitmap for the current frame
+//                    animationView.setImageBitmap(currentBitmap);
+//                });
+//                animator.start();
+//                animator.addListener(new AnimatorListenerAdapter() {
+//                    @Override
+//                    public void onAnimationEnd(Animator animation) {
+//                        animationOverlay.removeView(animationView);
+//                        if (preloadedFrames == null) throw new AssertionError();
+//                        for (Bitmap preloadedFrame : preloadedFrames) {
+//                            preloadedFrame.recycle();
+//                        }
+//                        preloadedFrames.clear();
+//                    }
+//                });
+//
+//            });
+//        }).start();
+//    // Wait for the frame loading to complete
+//            try {
+//                latch.await(); // This will block until countDown is called
+//            } catch (InterruptedException e) {
+//                Thread.currentThread().interrupt(); // Restore interrupted status
+//                Log.d("DEBUG", "Animation loading interrupted.");
+//            }
+//    }
+
     public void playOverlayAnimation(int[] animationFrames, View tileView, gameTile currentTile) {
+        if (isAnimating) {
+            Log.d("DEBUG", "Animation is already running.");
+            return;
+        }
+        isAnimating = true;
+
         // Get tile's position on the screen
         int[] location = new int[2];
         tileView.getLocationOnScreen(location);
@@ -456,68 +669,85 @@ public class SecondFragment extends Fragment {
         int tileRelativeX = tileX - overlayLocation[0];
         int tileRelativeY = tileY - overlayLocation[1];
 
-        // Preload all bitmaps
-        List<Bitmap> preloadedFrames = new ArrayList<>();
-        for (int frameResId : animationFrames) {
-            Bitmap bitmap = BitmapFactory.decodeResource(requireContext().getResources(), frameResId);
-            preloadedFrames.add(bitmap);
-        }
+        // No need for CountDownLatch here as you're directly using the shared bitmaps
+        List<Bitmap> preloadedFrames = (currentTile.getNumericValue() == 0)
+                ? decodedAnimTable.get(0)
+                : decodedAnimTable.get(1);
 
-        // Create ImageView for animation
-        ImageView animationView = new ImageView(requireContext());
-        animationOverlay.setVisibility(View.VISIBLE);
-        animationOverlay.addView(animationView);
+        requireActivity().runOnUiThread(() -> {
+            if (preloadedFrames == null || preloadedFrames.isEmpty()) {
+                Log.d("DEBUG", "No preloaded frames available.");
+                isAnimating = false; // Reset animation flag
+                return;
+            }
 
-        // Initialize handler and frame duration
-        Handler handler = new Handler();
-        int frameDuration = 500;
+            // Create ImageView for animation
+            ImageView animationView = new ImageView(requireContext());
+            animationOverlay.setVisibility(View.VISIBLE);
+            animationOverlay.addView(animationView);
 
-        // Start animation loop
-        for (int i = 0; i < animationFrames.length; i++) {
-            final int frameIndex = i;
-            handler.postDelayed(() -> {
-                // Resize the animationView based on the frame index
-                FrameLayout.LayoutParams params;
-                Bitmap currentBitmap = preloadedFrames.get(frameIndex);
+            // Create a ValueAnimator to control the frame changes
+            ValueAnimator animator = ValueAnimator.ofInt(0, animationFrames.length - 1);
+            animator.setDuration(animationFrames.length * 100L); // Adjust the duration as needed
+            animator.addUpdateListener(animation -> {
+                int frameIndex = (int) animation.getAnimatedValue();
+                Bitmap currentBitmap = preloadedFrames.get(frameIndex); // Use shared bitmaps
 
-                    if (frameIndex >= 3 && currentTile.getNumericValue() == 0) {
-                        params = new FrameLayout.LayoutParams(tileView.getWidth() * 3, tileView.getHeight() * 3);
-                    }
-                    else {
-                        params = new FrameLayout.LayoutParams(tileView.getWidth(), tileView.getHeight());
-                    }
-
+                FrameLayout.LayoutParams params = getLayoutParams(tileView, currentTile, frameIndex);
 
                 // Calculate new center position to keep animation centered
-                int offsetX = (params.width - tileView.getWidth()) / 2;
-                int offsetY = (params.height - tileView.getHeight()) / 2;
-                params.leftMargin = tileRelativeX - offsetX;
-                params.topMargin = tileRelativeY - offsetY;
+                    int offsetX = (params.width - tileView.getWidth()) / 2;
+                    int offsetY = (params.height - tileView.getHeight()) / 2;
+                    params.leftMargin = tileRelativeX - offsetX;
+                    params.topMargin = tileRelativeY - offsetY;
+                    animationView.setLayoutParams(params);
+
                 animationView.setLayoutParams(params);
 
                 // Set the preloaded bitmap for the current frame
                 animationView.setImageBitmap(currentBitmap);
-
-            }, (long) i * frameDuration);
-        }
-
-        // Cleanup after animation completes
-        handler.postDelayed(() -> {
-            animationOverlay.removeView(animationView);
-            for (Bitmap bitmap : preloadedFrames) {
-                bitmap.recycle();
+            });
+            animator.start();
+            if (currentTile.getNumericValue() == 0) {
+                playSound(explosionSfx);
             }
-            preloadedFrames.clear();
-        }, animationFrames.length * frameDuration);
+            else {
+                playSound(increasePointSfx);
+            }
+            animator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    animationOverlay.removeView(animationView);
+
+
+                }
+            });
+        });
     }
 
 
 
 
 
+    @NonNull
+    private static FrameLayout.LayoutParams getLayoutParams(View tileView, gameTile currentTile, int frameIndex) {
+        int width;
+        int height;
+
+        if (currentTile.getNumericValue() == 0 && frameIndex >= 3) {
+            width = tileView.getWidth() * 3;
+            height = tileView.getHeight() * 3;
+        }
+        else {
+            width = tileView.getWidth();
+            height = tileView.getHeight();
+        }
+
+        return new FrameLayout.LayoutParams (width, height);
+    }
+
 
     private void createGrid(int screenWidth) {
-
 
         int tileDimensions = screenWidth / 10;
 
@@ -632,20 +862,18 @@ public class SecondFragment extends Fragment {
 
         }
 
-
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        recyclerView = binding.recyclerView;
+        RecyclerView recyclerView = binding.recyclerView;
         recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 6));
 
+
         // Make sure gameBoard is not null and has items
-
         if (finalBoard != null && !finalBoard.isEmpty()) {
-          TileAdapter adapter = new TileAdapter(finalBoard, this);
-          recyclerView.setAdapter(adapter);
+            TileAdapter adapter = new TileAdapter(finalBoard, this);
+            recyclerView.setAdapter(adapter);
         }
-
         else {
             Log.e("SecondFragment", "Game board is empty or null.");
         }
@@ -660,6 +888,22 @@ public class SecondFragment extends Fragment {
             }
         }
     }
+
+
+
+
+
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Stop the music when exiting the fragment
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity != null) {
+            mainActivity.stopMusic();
+        }
+    }
+
 
     @Override
     public void onDestroyView() {

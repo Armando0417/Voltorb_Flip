@@ -1,5 +1,6 @@
 package com.example.voltorbflipmobile;
 
+import android.media.MediaPlayer;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -18,10 +19,18 @@ import com.example.voltorbflipmobile.databinding.ActivityMainBinding;
 import android.view.Menu;
 import android.view.MenuItem;
 
+
+
+
 public class MainActivity extends AppCompatActivity {
+
+
+
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
+
+    public MediaPlayer background_song = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +53,13 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        background_song = MediaPlayer.create(this, R.raw.background_song);
+        background_song.setLooping(true);
+        background_song.setVolume(0.5f, 0.5f);
+
+
+
     }
 
     @Override
@@ -74,4 +90,44 @@ public class MainActivity extends AppCompatActivity {
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
     }
+
+// ======================= ME HERE! =======================
+
+    public void startMusic() {
+        if (background_song != null && !background_song.isPlaying()) {
+            background_song.start();
+        }
+    }
+
+    public void stopMusic() {
+        if (background_song != null && background_song.isPlaying()) {
+            background_song.pause();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (background_song != null) {
+            background_song.release();
+            background_song = null;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startMusic();
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+
+
+
+
+
+
 }
