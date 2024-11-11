@@ -3,7 +3,32 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="50dp"
     android:layout_height="50dp"
+    android:background="@color/tile2"
     >
+
+    <FrameLayout
+
+        android:id="@+id/placeHolder_BOX"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="@color/tile3"
+        android:visibility="visible"
+        >
+
+        <View
+             android:layout_height="40dp"
+            android:layout_width="40dp"
+            android:layout_gravity="center"
+            android:background="@color/tile4"
+            android:visibility="visible"
+
+            >
+
+
+        </View>
+    </FrameLayout>
+
+
 
 
 
@@ -35,6 +60,3 @@
 
 
 </FrameLayout>
-
-
-

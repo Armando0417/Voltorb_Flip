@@ -3,6 +3,8 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="default_tile">#F2D0A4</color>
+    <color name="background_tile">#2B363B</color>
+
 
     <color name="tile1">#FF4C4C</color>
     <color name="tile2">#00C49A</color>

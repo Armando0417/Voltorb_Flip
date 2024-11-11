@@ -2,14 +2,12 @@ package com.example.voltorbflipmobile;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.AttributeSet;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.graphics.Canvas;
-import android.graphics.Bitmap;
-import android.content.Context;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -47,11 +45,11 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == GAME_TILE) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.gametile_layout, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.new_gametile, parent, false);
             return new GameTileHolder(view);
         }
         else {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.infotile_layout, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.new_infotile, parent, false);
             return new CustomInfoHolder(view);
         }
     }
@@ -98,6 +96,10 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         private final ImageView currentFrame;
 
+        private final View horizPipe;
+        private final View vertPipe;
+
+
         private boolean isFlipped = false;
         private boolean isAnimating = false;
 
@@ -108,12 +110,21 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             frontImage = itemView.findViewById(R.id.front_image);
             backImage = itemView.findViewById(R.id.back_image);
             currentFrame = itemView.findViewById(R.id.animation_frame);
+
+            horizPipe = itemView.findViewById(R.id.horizontal_pipe);
+            vertPipe = itemView.findViewById(R.id.vertical_pipe);
+
+
         }
 
         public void bind(SecondFragment.gameTile tile, SecondFragment currFragment) {
             backImage.setImageBitmap(tile.getBackImage());
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
+
+//            horizPipe.setBackgroundColor(tile.getHorizColor());
+//            vertPipe.setBackgroundColor(tile.getVertColor());
+
 
             currentFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
@@ -162,9 +173,10 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         Info Tile View Holder
 
     -------------------------*/
-    public class CustomInfoHolder extends RecyclerView.ViewHolder {
+    public static class CustomInfoHolder extends RecyclerView.ViewHolder {
         TextView pointCountView;
         TextView bombCountView;
+        FrameLayout  connectorPiece;
         LinearLayout container;
         ImageView miniVoltorb;
 
@@ -173,6 +185,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             pointCountView = itemView.findViewById(R.id.total_points);
             bombCountView = itemView.findViewById(R.id.total_bombs);
             container = itemView.findViewById(R.id.tile_background);
+//            connectorPiece = itemView.findViewById(R.id.connector_piece);
+
             miniVoltorb = itemView.findViewById(R.id.mini_voltorb);
         }
 
@@ -180,6 +194,15 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             pointCountView.setText(String.valueOf(tile.getTotalPoints()));
 
             bombCountView.setText(String.valueOf(tile.getTotalBombs()));
+
+//            connectorPiece.setBackgroundColor(tile.getColor());
+
+
+//            ViewGroup.LayoutParams params = connectorPiece.getLayoutParams();
+
+//            params.width = fragment.getContext().getResources().getDisplayMetrics().widthPixels;
+
+//            connectorPiece.setLayoutParams(params);
 
             miniVoltorb.setImageBitmap(tile.getMiniVoltorb());
             miniVoltorb.bringToFront();

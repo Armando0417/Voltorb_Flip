@@ -4,13 +4,19 @@
     android:layout_height="match_parent">
 
 
+    <include layout="@layout/game_grid"
+        android:id="@+id/game_grid"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+
     <FrameLayout
         android:id="@+id/animation_overlay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:translationZ="10000dp"
+        android:translationZ="1000dp"
         android:visibility="gone">
 
         <ImageView
@@ -18,17 +24,27 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone"
-            android:layout_gravity="center" />
+            android:layout_gravity="center">
+
+        </ImageView>
 
     </FrameLayout>
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="8dp"
         android:clipToPadding="false"
         android:scrollbars="vertical"
-        android:layout_marginTop="8dp"/>
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:paddingBottom="8dp"
+        android:paddingTop="8dp"
+
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        />
+
 </RelativeLayout>
 

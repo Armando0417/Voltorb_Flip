@@ -16,4 +16,6 @@
     <string name="backImage">back part of the Game Tiles</string>
     <string name="frontImage">Front part of Game Tiles</string>
     <string name="animationFrame">Placeholder to animate the tile effects</string>
+    <string name="general_tile_desc">This will be the background of the gameTiles</string>
+    <string name="mini_voltorb">This is the image of the mini voltorb in every infotile</string>
 </resources>

@@ -32,7 +32,7 @@ android {
 }
 
 dependencies {
-
+    implementation(libs.gridlayout)
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
