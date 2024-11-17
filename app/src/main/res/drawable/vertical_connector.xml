@@ -1,6 +1,6 @@
-<!-- res/drawable/layered_background.xml -->
+
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Outer Rectangle (100% Size) -->
+
     <item>
         <shape android:shape="rectangle">
             <size
@@ -10,7 +10,7 @@
         </shape>
     </item>
 
-    <!-- Inner Rectangle (80% Size using InsetDrawable) -->
+
     <item
         android:drawable="@drawable/vertical_inset" />
 </layer-list>

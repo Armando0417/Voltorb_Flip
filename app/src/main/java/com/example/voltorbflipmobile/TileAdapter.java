@@ -7,12 +7,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
+
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -96,9 +97,6 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         private final ImageView currentFrame;
 
-        private final View horizPipe;
-        private final View vertPipe;
-
 
         private boolean isFlipped = false;
         private boolean isAnimating = false;
@@ -111,19 +109,12 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             backImage = itemView.findViewById(R.id.back_image);
             currentFrame = itemView.findViewById(R.id.animation_frame);
 
-            horizPipe = itemView.findViewById(R.id.horizontal_pipe);
-            vertPipe = itemView.findViewById(R.id.vertical_pipe);
-
-
         }
 
         public void bind(SecondFragment.gameTile tile, SecondFragment currFragment) {
             backImage.setImageBitmap(tile.getBackImage());
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
-
-//            horizPipe.setBackgroundColor(tile.getHorizColor());
-//            vertPipe.setBackgroundColor(tile.getVertColor());
 
 
             currentFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -176,16 +167,16 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public static class CustomInfoHolder extends RecyclerView.ViewHolder {
         TextView pointCountView;
         TextView bombCountView;
-        FrameLayout  connectorPiece;
-        LinearLayout container;
         ImageView miniVoltorb;
+        ConstraintLayout tileBackground;
+
 
         public CustomInfoHolder(@NonNull View itemView) {
             super(itemView);
             pointCountView = itemView.findViewById(R.id.total_points);
             bombCountView = itemView.findViewById(R.id.total_bombs);
-            container = itemView.findViewById(R.id.tile_background);
-//            connectorPiece = itemView.findViewById(R.id.connector_piece);
+//            container = itemView.findViewById(R.id.tile_background);
+            tileBackground = itemView.findViewById(R.id.tile_background);
 
             miniVoltorb = itemView.findViewById(R.id.mini_voltorb);
         }
@@ -195,20 +186,13 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             bombCountView.setText(String.valueOf(tile.getTotalBombs()));
 
-//            connectorPiece.setBackgroundColor(tile.getColor());
-
-
-//            ViewGroup.LayoutParams params = connectorPiece.getLayoutParams();
-
-//            params.width = fragment.getContext().getResources().getDisplayMetrics().widthPixels;
-
-//            connectorPiece.setLayoutParams(params);
-
             miniVoltorb.setImageBitmap(tile.getMiniVoltorb());
             miniVoltorb.bringToFront();
 
+
             try {
-                container.setBackgroundColor(tile.getColor());
+//                container.setBackgroundColor(tile.getColor());
+                tileBackground.setBackgroundColor(tile.getColor());
             } catch (Exception e) {
                 Log.d(SecondFragment.DEBUG_TAG, "Error: " + e.getMessage());
             }

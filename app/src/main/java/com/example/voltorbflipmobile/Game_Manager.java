@@ -56,7 +56,7 @@ public class Game_Manager {
 
     public void showTileCount() {
         for (Map.Entry<SecondFragment.tileTypes, Integer> entry : tileCounter.entrySet()) {
-            Log.d("Tile Count", entry.getKey() + ": " + entry.getValue());
+                Log.d("Tile Count", entry.getKey() + ": " + entry.getValue());
         }
     }
 }

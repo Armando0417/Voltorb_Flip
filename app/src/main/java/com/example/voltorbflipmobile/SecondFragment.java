@@ -3,10 +3,15 @@ package com.example.voltorbflipmobile;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.InsetDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
@@ -20,7 +25,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -236,19 +241,19 @@ public class SecondFragment extends Fragment {
 
             switch (relevantValue) {
                 case 0:
-                    tileColor = colorTable.get(colorTypes.ROSE);
+                    tileColor = colorTable.get(colorTypes.GOLD);
                     break;
                 case 1:
-                    tileColor = colorTable.get(colorTypes.MINT);
+                    tileColor = colorTable.get(colorTypes.ROSE);
                     break;
                 case 2:
-                    tileColor = colorTable.get(colorTypes.LAKE_BLUE);
+                    tileColor = colorTable.get(colorTypes.MINT);
                     break;
                 case 3:
-                    tileColor = colorTable.get(colorTypes.WISTERA);
+                    tileColor = colorTable.get(colorTypes.TEAL);
                     break;
                 default:
-                    tileColor = colorTable.get(colorTypes.GOLD);
+                    tileColor = colorTable.get(colorTypes.WISTERA);
                     break;
             }
 
@@ -318,6 +323,10 @@ public class SecondFragment extends Fragment {
             return this.height;
         }
 
+        public colorTypes getColorType() {
+            return colorTypes.values()[row_col.first - 1];
+        }
+
         @Override
         public Pair<Integer, Integer> getPosition() {
             return this.position;
@@ -344,7 +353,7 @@ public class SecondFragment extends Fragment {
     }
 
 
-    public class VerticalSpacingItemDecoration extends RecyclerView.ItemDecoration {
+    public static class VerticalSpacingItemDecoration extends RecyclerView.ItemDecoration {
 
         private final int verticalSpaceHeight;
         private final int spanCount;
@@ -355,7 +364,7 @@ public class SecondFragment extends Fragment {
         }
 
         @Override
-        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, RecyclerView parent, @NonNull RecyclerView.State state) {
             int position = parent.getChildAdapterPosition(view);
 
             // Apply spacing only if the item is not in the first row
@@ -366,7 +375,33 @@ public class SecondFragment extends Fragment {
     }
 
 
+    static class NonScrollableGridLayoutManager extends GridLayoutManager {
 
+        public NonScrollableGridLayoutManager(Context context, int spanCount) {
+            super(context, spanCount);
+        }
+
+
+//        int maxScrollDistance = 0;
+//        @Override
+//        public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler, RecyclerView.State state) {
+//            // Restrict vertical scroll amount
+//            int scrollDistance = Math.min(maxScrollDistance, Math.abs(dy)) * Integer.signum(dy);
+//            return super.scrollVerticallyBy(scrollDistance, recycler, state);
+//        }
+
+
+
+        @Override
+        public boolean canScrollVertically() {
+            return false; // Disable vertical scrolling
+        }
+
+        @Override
+        public boolean canScrollHorizontally() {
+            return false; // Disable horizontal scrolling
+        }
+    }
 
 
     // ================================================================
@@ -387,7 +422,7 @@ public class SecondFragment extends Fragment {
     }
 
     public enum colorTypes {
-        ROSE, MINT, LAKE_BLUE, WISTERA, GOLD
+        ROSE, MINT, TEAL, WISTERA, GOLD
     }
 
     private final HashMap<String, int[] > animationTable = new HashMap<>();
@@ -407,6 +442,7 @@ public class SecondFragment extends Fragment {
     ExecutorService executorService = Executors.newFixedThreadPool(3);
 
     private ArrayList<ArrayList<Tile>> finalBoard;
+    private ArrayList<Tile> flattenedBoard;
     public Game_Manager gm;
 
     public boolean isAnimating = false;
@@ -466,10 +502,15 @@ public class SecondFragment extends Fragment {
         loadFilesWithServiceThreading();
 
         createGrid(screenWidth);
-
         gm = new Game_Manager(finalBoard);
+
+
         gm.countBoard();
         gm.showTileCount();
+
+
+        flattenedBoard = new ArrayList<>();
+        flattenBoard();
 
         MainActivity mainActivity = (MainActivity) getActivity();
 
@@ -485,9 +526,12 @@ public class SecondFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         RecyclerView recyclerView = binding.recyclerView;
-        recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 6));
-        recyclerView.addItemDecoration(new VerticalSpacingItemDecoration(30, 6));
 
+        NonScrollableGridLayoutManager layoutManager = new NonScrollableGridLayoutManager(requireContext(), 6);
+        recyclerView.setLayoutManager(layoutManager);
+
+        recyclerView.addItemDecoration(new VerticalSpacingItemDecoration(30, 6));
+        recyclerView.setNestedScrollingEnabled(false);
 
         // Make sure gameBoard is not null and has items
         if (finalBoard != null && !finalBoard.isEmpty()) {
@@ -515,46 +559,10 @@ public class SecondFragment extends Fragment {
             public void onGlobalLayout() {
                 RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
 
-
-
-
-            /*
-                The method should place all of the column connectors and row connectors in their respective spots in the screen.
-
-                Goal: place the connector pieces in the correct spots to make the grid look good enough
-
-                Process:
-                    1) We need to get the 4 tiles of each side.
-                        ! i -> [0, 5)
-                        * the top tile (used for the columns)       -> row: [0] col: [i]
-                        * The bottom tile (used for the columns)    -> row: [4] col: [i]
-                        * The left Tile (used for the rows)         -> row: [i] col: [0]
-                        *The right Tile (used for the rows)         -> row: [i] col: [4]
-
-                   2) Calculate the distance between the two opposing tiles
-                        * Width will be between the left and right tiles
-                            ? right tile - left tile + tile width/2
-                        * Height will be between the top and bottom tiles
-                            ? bottom tile - top tile + tile height/2
-
-
-                   3) Find the correct position for the rows and columns (center them on their respective
-                        position)
-
-                   4) Get the connector views (the current horizontal and vertical connectors)
-                    * The horizontal rows and vertical columns go from 0 -> 4
-                    ! you will be iterating through them
-
-                   5) Set the correct width OR height (depending on horizontal or vertical (respectively) )
-
-                   6) Set the correct position (x, y)
-
-             */
-
                 int gridWidth = recyclerView.getWidth();
                 int gridHeight = recyclerView.getHeight();
-                int tileWidth = gridWidth / 6; // Assuming 6 columns
-                int tileHeight = gridHeight / 6; // Assuming 6 rows
+                int tileWidth = gridWidth / 6;
+                int tileHeight = gridHeight / 6;
 
                 int startTileLeft = 0;
                 int startTileRight = 5;
@@ -566,15 +574,33 @@ public class SecondFragment extends Fragment {
                 // Position the connectors (vertical and horizontal)
                 for (int i = 0; i < 5; i++) {
 
+                    //? Gradient Inset Rectangle
+                    GradientDrawable horizOuterRect = new GradientDrawable();
+                    horizOuterRect.setShape(GradientDrawable.RECTANGLE);
+                    horizOuterRect.setColor(ContextCompat.getColor(getContext(), R.color.white));
+                    horizOuterRect.setSize(0, 0);
+
+
+                    GradientDrawable vertOuterRect = new GradientDrawable();
+                    vertOuterRect.setShape(GradientDrawable.RECTANGLE);
+                    vertOuterRect.setColor(ContextCompat.getColor(getContext(), R.color.white));
+                    vertOuterRect.setSize(0, 0);
+
+
+
+                    //? Inner Rectangle
+                    GradientDrawable innerVertRect = new GradientDrawable();
+                    innerVertRect.setShape(GradientDrawable.RECTANGLE);
+
+                    GradientDrawable innerHorizRect = new GradientDrawable();
+                    innerHorizRect.setShape(GradientDrawable.RECTANGLE);
+
+
                     //Getting all 4 tiles
                     View leftSideTile = Objects.requireNonNull(recyclerView.findViewHolderForAdapterPosition(startTileLeft)).itemView;
                     View RightSideTile = Objects.requireNonNull(recyclerView.findViewHolderForAdapterPosition(startTileRight)).itemView;
                     View topTile = Objects.requireNonNull(recyclerView.findViewHolderForAdapterPosition(startTileTop)).itemView;
                     View botTile = Objects.requireNonNull(recyclerView.findViewHolderForAdapterPosition(startTileBot)).itemView;
-
-
-
-
 
                     // Get positions of all tiles
                     int[] locationLeft = new int[2];
@@ -587,96 +613,102 @@ public class SecondFragment extends Fragment {
                     topTile.getLocationOnScreen(locationTop);
                     botTile.getLocationOnScreen(locationBot);
 
-                    // Get overlay's position
+                // Get overlay's position
                     int[] overlayLocation = new int[2];
                     animationOverlay.getLocationOnScreen(overlayLocation);
 
-                    // Calculate relative positions for all tiles
+                // Region Calculate relative positions for all tiles
+                    // Left Tile
+                        int leftRelativeX = locationLeft[0] - overlayLocation[0];
+                        int leftRelativeY = locationLeft[1] - overlayLocation[1];
 
-// Left Tile (already done in your original code)
-                    int leftRelativeX = locationLeft[0] - overlayLocation[0];
-                    int leftRelativeY = locationLeft[1] - overlayLocation[1];
+                    // Right Tile
+                        int rightRelativeX = locationRight[0] - overlayLocation[0];
+                        int rightRelativeY = locationRight[1] - overlayLocation[1];
 
-// Right Tile
-                    int rightRelativeX = locationRight[0] - overlayLocation[0];
-                    int rightRelativeY = locationRight[1] - overlayLocation[1];
+                    // Top Tile
+                        int topRelativeX = locationTop[0] - overlayLocation[0];
+                        int topRelativeY = locationTop[1] - overlayLocation[1];
 
-// Top Tile
-                    int topRelativeX = locationTop[0] - overlayLocation[0];
-                    int topRelativeY = locationTop[1] - overlayLocation[1];
-
-// Bottom Tile
-                    int botRelativeX = locationBot[0] - overlayLocation[0];
-                    int botRelativeY = locationBot[1] - overlayLocation[1];
-
-
-                    Log.d(DEBUG_TAG, "Current Tiles being checked: " + startTileLeft + ", " + startTileRight + ", " + startTileTop + ", " + startTileBot);
-
-                    startTileLeft += 6;
-                    startTileRight += 6;
-                    startTileTop++;
-                    startTileBot++;
+                    // Bottom Tile
+                        int botRelativeX = locationBot[0] - overlayLocation[0];
+                        int botRelativeY = locationBot[1] - overlayLocation[1];
 
 
                     View horizontalConnector = view.findViewById(getResources().getIdentifier("horizontal_connector_" + i, "id", requireContext().getPackageName()));
                     View verticalConnector = view.findViewById(getResources().getIdentifier("vertical_connector_" + i, "id", requireContext().getPackageName()));
 
+                // Calculate distance between tiles
+                    int horizDist = Math.abs(locationRight[0] - (locationLeft[0] + tileWidth) + tileWidth / 3 );
+                    int vertDist = Math.abs( locationBot[1] - (locationTop[1] + tileWidth) + tileWidth / 3 );
 
-// Calculate distances using relative positions
-                    Log.d(DEBUG_TAG, "Gonna check for: " + rightRelativeX + " - " + leftRelativeX);
                     int horizontalDistance = Math.abs(rightRelativeX - leftRelativeX + tileWidth/4);
                     int verticalDistance = Math.abs(botRelativeY - topRelativeY + tileHeight/4);
 
-// ... (connector retrieval code) ...
+                // Fetching both Tile Colors
+                    infoTile currHorizTile = null;
+                    infoTile currVertTile = null;
+                    if (startTileBot != 35) {
+                        currVertTile = (infoTile) flattenedBoard.get(startTileBot);
+                        currHorizTile = (infoTile) flattenedBoard.get(startTileRight);
+                    }
+
+                    int currRowColor = (currHorizTile != null) ? currHorizTile.getColor() : Color.YELLOW;
+                    int currColColor =  (currVertTile != null) ? currVertTile.getColor() :Color.YELLOW;
+
+                        startTileLeft += 6;
+                        startTileRight += 6;
+                        startTileTop++;
+                        startTileBot++;
+
+                        float horizTopOffset = (float) (15.0/100.0);
+                        float horizBottomOffset = (float) (15.0/100.0);
+                        float horizLeftOffset = (float) (1.5/100.0);
+                        float horizRightOffset = (float) (1.5/100.0);
+
+                        int horizTopActualOffset = (int) (20 * horizTopOffset);
+                        int horizBottomActualOffset = (int) (20 * horizBottomOffset);
+                        int horizLeftActualOffset = (int) (horizDist  * horizLeftOffset);
+                        int horizRightActualOffset = (int) (horizDist  * horizRightOffset);
+
+                        float vertTopOffset = (float) (1.5 / 100.0);
+                        float vertBottomOffset = (float) (1.5 / 100.0);
+                        float vertLeftOffset = (float) (15.0 / 100.0);
+                        float vertRightOffset = (float) (15.0 / 100.0);
+
+                        int vertTopActualOffset = (int) (vertDist * vertTopOffset);
+                        int vertBottomActualOffset = (int) (vertDist * vertBottomOffset);
+                        int vertLeftActualOffset = (int) (20 * vertLeftOffset);
+                        int vertRightActualOffset = (int) (20 * vertRightOffset);
+
+                // Create InsetDrawable for horizontal connector
+                    innerHorizRect.setColor(currRowColor);
+                    InsetDrawable horizontalInset = new InsetDrawable(innerHorizRect, horizLeftActualOffset, horizTopActualOffset, horizRightActualOffset, horizBottomActualOffset);
+                    LayerDrawable horizontalLayers = new LayerDrawable(new Drawable[]{horizOuterRect, horizontalInset});
+
+                // Create InsetDrawable for vertical connector
+                    innerVertRect.setColor(currColColor);
+                    InsetDrawable verticalInset = new InsetDrawable(innerVertRect, vertLeftActualOffset, vertTopActualOffset, vertRightActualOffset, vertBottomActualOffset);
+                    LayerDrawable verticalLayers = new LayerDrawable(new Drawable[]{vertOuterRect, verticalInset});
+
 
                     if (horizontalConnector != null) {
-                        // Use relative positions for horizontal connector placement
-                        horizontalConnector.setLayoutParams(new FrameLayout.LayoutParams(horizontalDistance, 20));
-                        horizontalConnector.setX(leftRelativeX  + (float) tileWidth/4);
-                        horizontalConnector.setY(rightRelativeY + (float) tileHeight/5);
-                        Log.d(DEBUG_TAG, "Placed Horizontal Connector #" + i + " at " + horizontalConnector.getX() + ", " + horizontalConnector.getY());
+                        horizontalConnector.setLayoutParams(new FrameLayout.LayoutParams(horizDist + 10, 20));
+                        horizontalConnector.setX((float) (locationLeft[0] + tileWidth - (float) tileWidth / 3.5 - 4.5) );
+                        horizontalConnector.setY(rightRelativeY + (float) tileHeight / 5);
+
+                        horizontalConnector.setBackground(horizontalLayers);
                     }
 
                     if (verticalConnector != null) {
-                        // Use relative positions for vertical connector placement
-                        verticalConnector.setLayoutParams(new FrameLayout.LayoutParams(20, verticalDistance));
-                        verticalConnector.setX(botRelativeX + (float) tileWidth / 3);
-                        verticalConnector.setY(topRelativeY + (float) tileHeight / 6);
-                        Log.d(DEBUG_TAG, "Placed Vertical Connector #" + i + " at " + verticalConnector.getX() + ", " + verticalConnector.getY());
+                        verticalConnector.setLayoutParams(new FrameLayout.LayoutParams(20, vertDist + 10));
+                        verticalConnector.setX((float) (botRelativeX + (float) tileWidth / 3.5));
+                        Log.d(DEBUG_TAG, "current Top Tile: " + startTileTop);
+
+                        verticalConnector.setY((float) (locationTop[1] - tileHeight/2.0) + 2);
+                        verticalConnector.setBackground(verticalLayers);
                     }
-
-
-//                    int horizontalDistance = Math.abs(locationRight[0] - locationLeft[0]) + tileWidth / 2;
-//                    int verticalDistance = Math.abs(locationBot[1] - locationTop[1]) + tileHeight / 2;
-
-
-
-
-                    /*
-                        Possible optimization, preload all of the connectors into an array and then iterate through it to assign each position
-
-                     */
-
-//
-//
-//                    if (horizontalConnector != null) {
-//                        float horizontalPosition = topTile.getX();
-//                        horizontalConnector.setLayoutParams(new FrameLayout.LayoutParams(horizontalDistance, 20));
-//                        horizontalConnector.setX(horizontalPosition + (float) tileWidth / 2);
-//                        horizontalConnector.setY((float) locationLeft[1] + (float) tileHeight /2);
-//                        Log.d(DEBUG_TAG, "Placed Horizontal Connector #" + i + " at " + horizontalConnector.getX() + ", " + horizontalConnector.getY());
-//                    }
-//                    if (verticalConnector != null) {
-//                        float verticalPosition = leftSideTile.getY();
-//                        verticalConnector.setLayoutParams(new ViewGroup.LayoutParams(20, verticalDistance));
-//                        verticalConnector.setX((float) locationTop[0] + (float) tileWidth / 2);
-//                        verticalConnector.setY( verticalPosition + (float) tileHeight / 2);
-//                        Log.d(DEBUG_TAG, "Placed Vertical Connector #" + i + " at " + verticalConnector.getX() + ", " + verticalConnector.getY());
-//                    }
-//
-//
-//                }
-
+                    Log.d(DEBUG_TAG, "Values for the width and height: " + horizDist + ", " + vertDist);
                 }
 
                 // Remove the listener after the first layout pass
@@ -774,7 +806,7 @@ public class SecondFragment extends Fragment {
                     // Loading color types
                     colorTable.put(colorTypes.ROSE, new int[]{220, 117, 143});
                     colorTable.put(colorTypes.MINT, new int[]{0, 204, 163});
-                    colorTable.put(colorTypes.LAKE_BLUE, new int[]{119, 141, 169});
+                    colorTable.put(colorTypes.TEAL, new int[]{0, 128, 128});
                     colorTable.put(colorTypes.WISTERA, new int[]{180, 160, 229});
                     colorTable.put(colorTypes.GOLD, new int[]{243, 176, 43});
                 });
@@ -919,8 +951,23 @@ public class SecondFragment extends Fragment {
             }
         }
             populateInfoTiles();
-
+            Log.d(DEBUG_TAG, "Finished Create grid with a size of " + finalBoard.size() + "x" + finalBoard.get(0).size());
         }
+
+
+        private void flattenBoard() {
+            for (ArrayList<Tile> row : finalBoard) {
+                Log.d(DEBUG_TAG, "Size of final board is " + finalBoard.size());
+                Log.d(DEBUG_TAG, "row size is: " + row.size());
+                for (Tile curr : row) {
+                    if (curr != null) {
+                        flattenedBoard.add(curr);
+                    }
+                }
+
+                }
+            }
+
 
 
 
