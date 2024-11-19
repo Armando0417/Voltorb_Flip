@@ -2,13 +2,27 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    >
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+<!--    <FrameLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent">-->
+
+<!--        <ProgressBar-->
+<!--            android:id="@+id/loading_Indicator"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_gravity="center" />-->
+
+<!--    </FrameLayout>-->
+
 
 
     <include layout="@layout/game_grid"
         android:id="@+id/game_grid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="invisible"
         />
 
 
@@ -36,7 +50,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:clipToPadding="false"
 
         android:layout_marginStart="8dp"
@@ -46,7 +60,21 @@
         android:nestedScrollingEnabled="false"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        />
+
+    />
+
+
+    <include layout="@layout/score_board"
+        android:id="@+id/scoreboard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="50dp"
+        android:layout_marginTop="450dp"
+    >
+
+    </include>
+
+
 
 </RelativeLayout>
 

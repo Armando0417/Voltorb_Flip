@@ -66,7 +66,6 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         if (holder instanceof GameTileHolder) {
             ((GameTileHolder) holder).bind((SecondFragment.gameTile) board.get(row).get(col), fragment);
-
         }
         else {
             if (holder instanceof CustomInfoHolder) {
@@ -119,41 +118,53 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             currentFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
+
             backImage.setOnClickListener(v -> {
-                if (isAnimating || isFlipped) {
-                    Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked but is still playing");
+                if (Game_Manager.isLosingState) {
+                    Log.d(SecondFragment.DEBUG_TAG, "Lose animation in progress. No action allowed.");
+                    return;
+                }
+
+                if (Game_Manager.isTimerRunning()) {
+                    Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked and Animation Not Started");
                 }
                 else {
                     Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked and Animation Started");
                     isAnimating = true;
+
+                    Game_Manager.startCountdownTimer();
+
                     flipTile();
 
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        try {
-                            currFragment.playOverlayAnimation(animationFrames, itemView, tile);
-                        } catch (Exception e) {
-                            Log.d(SecondFragment.ERROR_TAG, "Error: " + e.getMessage());
-                        } finally {
-                            Log.d(SecondFragment.DEBUG_TAG, "Animation Ended");
-                            currFragment.isAnimating = false;
-                            isAnimating = false;
-                        }
-                    }, 200);
+                    if (!Game_Manager.isLosingState) {
+
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            try {
+                                currFragment.playOverlayAnimation(animationFrames, itemView, tile);
+                            }
+                            catch (Exception e) {
+                                Log.d(SecondFragment.ERROR_TAG, "Error: " + e.getMessage());
+                            } finally {
+                                Log.d(SecondFragment.DEBUG_TAG, "Animation Ended");
+                                currFragment.isAnimating = false;
+                                isAnimating = false;
+                            }
+                        }, 200);
                     }
+                }
             });
         }
 
-        private void flipTile() {
+        public void flipTile() {
             backImage.animate().rotationY(180).setDuration(200).withEndAction(() -> {
                 backImage.setVisibility(View.GONE);
                 frontImage.setVisibility(View.VISIBLE);
                 frontImage.setRotation(0);
                 frontImage.animate().rotationY(0).setDuration(150).withEndAction(() -> {
                     isFlipped = true;
-                    fragment.playSound(fragment.flipTileSfx);
                 });
-
             }).start();
+            fragment.playSound(fragment.flipTileSfx);
         }
 
     }
