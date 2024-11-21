@@ -3,11 +3,12 @@ package com.example.voltorbflipmobile;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
-import android.app.MediaRouteButton;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -29,6 +30,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.helper.widget.Grid;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -501,6 +503,48 @@ public class SecondFragment extends Fragment {
         return binding.getRoot();
     }
 
+//    public class GridBoxItemDecoration extends RecyclerView.ItemDecoration {
+//        private final int borderThickness;
+//        private final Paint paint;
+//
+//        public GridBoxItemDecoration(int color, int thickness) {
+//            this.borderThickness = thickness;
+//            this.paint = new Paint();
+//            this.paint.setColor(color);
+//            this.paint.setStyle(Paint.Style.STROKE);
+//            this.paint.setStrokeWidth(thickness);
+//        }
+//
+//        @Override
+//        public void onDrawOver(@NonNull Canvas canvas, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+//            int childCount = parent.getChildCount();
+//
+//            float parentLeft = parent.getLeft();
+//            float parentTop = parent.getTop();
+//            float parentRight = parent.getRight();
+//            float parentBottom = parent.getBottom();
+//            canvas.drawRect(parentLeft, parentTop, parentRight, parentBottom, paint);
+//
+//            for (int i = 0; i < childCount; i++) {
+//                View child = parent.getChildAt(i);
+//
+//                // Get the item's bounds
+//                float left = child.getLeft();
+//                float top = child.getTop();
+//                float right = child.getRight() - 1;
+//                float bottom = child.getBottom() - 1;
+//
+//                // Draw a box around the item
+//                canvas.drawRect(left, top, right, bottom, paint);
+////                canvas.drawRect(parent.getLeft(), parent.getTop(), parent.getBottom(), parent.getRight(), paint);
+//            }
+//        }
+//    }
+//
+//
+
+
+
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
@@ -511,6 +555,10 @@ public class SecondFragment extends Fragment {
 
         recyclerView.addItemDecoration(new VerticalSpacingItemDecoration(30, 6));
 
+//        int dividerColor = Color.LTGRAY; // Choose a color for your dividers
+//        int dividerThickness = 2; // Adjust thickness (in pixels) as needed
+//        recyclerView.addItemDecoration(new GridBoxItemDecoration(dividerColor, dividerThickness));
+
         // Make sure gameBoard is not null and has items
         if (finalBoard != null && !finalBoard.isEmpty()) {
             TileAdapter adapter = new TileAdapter(finalBoard, this);
@@ -520,17 +568,6 @@ public class SecondFragment extends Fragment {
         else {
             Log.e("SecondFragment", "Game board is empty or null.");
         }
-
-
-//        // Update the game Tiles
-//        for (int row = 0; row < BOARD_SIZE; row++) {
-//            for (int col = 0; col < BOARD_SIZE; col++) {
-//
-//                if (finalBoard.get(row).get(col) instanceof gameTile) {
-//                    ((gameTile) finalBoard.get(row).get(col)).update();
-//                }
-//            }
-//        }
 
         // Position connectors after RecyclerView layout is complete
 
@@ -543,6 +580,8 @@ public class SecondFragment extends Fragment {
                 int gridHeight = recyclerView.getHeight();
                 int tileWidth = gridWidth / 6;
                 int tileHeight = gridHeight / 6;
+
+                Log.d("Grid width and height are: ", gridWidth + " " + gridHeight);
 
                 int startTileLeft = 0;
                 int startTileRight = 5;
@@ -592,21 +631,24 @@ public class SecondFragment extends Fragment {
                     topTile.getLocationOnScreen(locationTop);
                     botTile.getLocationOnScreen(locationBot);
 
-                // Get overlay's position
+
+                    // Get overlay's position
                     int[] overlayLocation = new int[2];
                     animationOverlay.getLocationOnScreen(overlayLocation);
 
-                // Region Calculate relative positions for all tiles
+                    // Region Calculate relative positions for all tiles
 
                     // Right Tile
+                    int leftRelativeX = locationLeft[0] - overlayLocation[0];
                     int rightRelativeY = locationRight[1] - overlayLocation[1];
 
+                    Log.d(DEBUG_TAG, "The actual tile position for left is " + (locationLeft[1] - overlayLocation[1]) );
                     // Bottom Tile
                         int botRelativeX = locationBot[0] - overlayLocation[0];
 
                 // Calculate distance between tiles
-                    int horizDist = Math.abs(locationRight[0] - (locationLeft[0] + tileWidth) + tileWidth / 3 );
-                    int vertDist = Math.abs( locationBot[1] - (locationTop[1] + tileWidth) + tileWidth / 3 );
+                    int horizDist = Math.abs(locationRight[0] - (locationLeft[0] + leftSideTile.getWidth()) - 10);
+                    int vertDist = Math.abs( locationBot[1] - (locationTop[1] + topTile.getHeight()) - 10);
 
                 // Fetching both Tile Colors
                     infoTile currHorizTile = null;
@@ -656,8 +698,9 @@ public class SecondFragment extends Fragment {
                         if (horizontalConnector != null) {
                             requireActivity().runOnUiThread(() -> {
                                 horizontalConnector.setLayoutParams(new FrameLayout.LayoutParams(horizDist + 10, 20));
-                                horizontalConnector.setX((float) (locationLeft[0] + tileWidth - (float) tileWidth / 3.5 - 4.5));
-                                horizontalConnector.setY(rightRelativeY + (float) tileHeight / 5);
+                                horizontalConnector.setX((float) locationLeft[0] + leftSideTile.getWidth() );
+                                horizontalConnector.setY(leftSideTile.getY() + ((float) leftSideTile.getHeight() /2 ) + 11);
+
                                 horizontalConnector.setBackground(horizontalLayers);
                             });
                         }
@@ -676,9 +719,9 @@ public class SecondFragment extends Fragment {
                         if (verticalConnector != null) {
                             requireActivity().runOnUiThread(() -> {
                                 verticalConnector.setLayoutParams(new FrameLayout.LayoutParams(20, vertDist + 10));
-                                verticalConnector.setX((float) (botRelativeX + (float) tileWidth / 3.5));
+                                verticalConnector.setX((float) locationTop[0] + (float) topTile.getWidth() / 2 - 10);
 
-                                verticalConnector.setY((float) (locationTop[1] - tileHeight / 2.0) + 2);
+                                verticalConnector.setY((float) (locationTop[1] - locationTop[1] / 2.5) - 10);
                                 verticalConnector.setBackground(verticalLayers);
 
                             });
@@ -686,6 +729,9 @@ public class SecondFragment extends Fragment {
 
                         latch.countDown();
                     });
+
+
+
 
             }
 
@@ -799,13 +845,6 @@ public class SecondFragment extends Fragment {
                     decodedAnimTable.put(0, decodedExplosionFrames);
                     decodedAnimTable.put(1, decodedPointFrames);
 
-//                    for (int frameResId : Objects.requireNonNull(animationTable.get("points"))) {
-//                        decodedPointFrames.add(BitmapFactory.decodeResource(getResources(), frameResId));
-//                    }
-//                    for (int frameResId : Objects.requireNonNull(animationTable.get("explosion"))) {
-//                        decodedExplosionFrames.add(BitmapFactory.decodeResource(getResources(), frameResId));
-//                    }
-
                 });
 
                 executorService.submit(() -> {
@@ -857,7 +896,7 @@ public class SecondFragment extends Fragment {
             int tileRelativeX = tileX - overlayLocation[0];
             int tileRelativeY = tileY - overlayLocation[1];
 
-            // No need for CountDownLatch here as you're directly using the shared bitmaps
+
             List<Bitmap> preloadedFrames = (currentTile.getNumericValue() == 0)
                     ? decodedAnimTable.get(0)
                     : decodedAnimTable.get(1);
@@ -898,6 +937,7 @@ public class SecondFragment extends Fragment {
                 animator.start();
                 if (currentTile.getNumericValue() == 0) {
                     playSound(explosionSfx);
+                    Log.d(DEBUG_TAG, "Explosion went off");
                 }
                 else {
                     playSound(increasePointSfx);
@@ -909,17 +949,17 @@ public class SecondFragment extends Fragment {
 
                         gm.updateBoard(currentTile);
 
-                        // Introduce a delay after the animation ends
+
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             if (Game_Manager.verifyLoss(currentTile)) {
                                 Log.d(DEBUG_TAG, "Lose Works!");
-                                triggerLoseAnimation();
+//                                triggerLoseAnimation();
                             }
                             if (gm.verifyWin()) {
                                 Log.d(DEBUG_TAG, "Win Works!");
                                 playSound(levelCompleteSfx);
                             }
-                        }, 1000);
+                        }, 500);
 
                     }
                 });
@@ -950,7 +990,7 @@ public class SecondFragment extends Fragment {
                         TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
 
 
-                        tileHolder.flipTile();
+                        tileHolder.flipUp();
                     }
                 }
             }, col * 500);

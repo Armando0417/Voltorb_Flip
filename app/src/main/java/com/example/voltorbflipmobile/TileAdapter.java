@@ -1,5 +1,6 @@
 package com.example.voltorbflipmobile;
 
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -125,7 +126,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     return;
                 }
 
-                if (Game_Manager.isTimerRunning()) {
+                else if (Game_Manager.isTimerRunning()) {
                     Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked and Animation Not Started");
                 }
                 else {
@@ -134,7 +135,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
                     Game_Manager.startCountdownTimer();
 
-                    flipTile();
+                    flipUp();
+
 
                     if (!Game_Manager.isLosingState) {
 
@@ -144,7 +146,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                             }
                             catch (Exception e) {
                                 Log.d(SecondFragment.ERROR_TAG, "Error: " + e.getMessage());
-                            } finally {
+                            }
+                            finally {
                                 Log.d(SecondFragment.DEBUG_TAG, "Animation Ended");
                                 currFragment.isAnimating = false;
                                 isAnimating = false;
@@ -155,7 +158,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             });
         }
 
-        public void flipTile() {
+
+        public void flipUp() {
             backImage.animate().rotationY(180).setDuration(200).withEndAction(() -> {
                 backImage.setVisibility(View.GONE);
                 frontImage.setVisibility(View.VISIBLE);
@@ -166,6 +170,19 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }).start();
             fragment.playSound(fragment.flipTileSfx);
         }
+
+        public void flipDown() {
+            backImage.animate().rotationY(180).setDuration(200).withEndAction(() -> {
+                backImage.setVisibility(View.VISIBLE);
+                frontImage.setVisibility(View.GONE);
+                frontImage.setRotation(0);
+                frontImage.animate().rotationY(0).setDuration(150).withEndAction(() -> {
+                    isFlipped = true;
+                });
+            }).start();
+            fragment.playSound(fragment.flipTileSfx);
+        }
+
 
     }
 
@@ -202,9 +219,10 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
 
             try {
-//                container.setBackgroundColor(tile.getColor());
                 tileBackground.setBackgroundColor(tile.getColor());
-            } catch (Exception e) {
+//                tileBackground.setBackgroundColor(Color.TRANSPARENT);
+            }
+            catch (Exception e) {
                 Log.d(SecondFragment.DEBUG_TAG, "Error: " + e.getMessage());
             }
 

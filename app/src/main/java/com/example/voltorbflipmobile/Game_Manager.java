@@ -2,8 +2,6 @@ package com.example.voltorbflipmobile;
 
 import android.os.CountDownTimer;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -27,7 +25,7 @@ public class Game_Manager {
     public boolean isWinningState = false;
 
     public static void startCountdownTimer() {
-        countDownTimer = new CountDownTimer(500, 1000) {
+        countDownTimer = new CountDownTimer(350, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 Log.d(SecondFragment.DEBUG_TAG, "Timer Ticked");
@@ -122,26 +120,21 @@ public class Game_Manager {
         if (currTile.getNumericValue() > 0 && tileCounter.getOrDefault(currTile.getType(), 0) > 0) {
             tileCounter.put(currTile.getType(), tileCounter.get(currTile.getType()) - 1);
 
-
             prepareNumber(currTile.getNumericValue());
 
             for (int i = 0; i < 5; i++) {
-                try {
-                    TextView currDigit = (TextView) scoreMap.get(i);
-                    currDigit.setText(String.valueOf(scoreText.charAt(i)));
-//                    scoreMap.get(i).setText(scoreText.charAt(i));
-                }
-                catch (Exception e) {
-                    Log.d(SecondFragment.ERROR_TAG, "Uhhh we passed it wrong");
-                    Log.d(SecondFragment.ERROR_TAG, e.getMessage());
-                }
-            }
+                int finalI = i;
+                Utilities.tryCatch(
+                    () -> {
+                            TextView currDigit = (TextView) scoreMap.get(finalI);
+                            currDigit.setText(String.valueOf(scoreText.charAt(finalI)));
+                        },
+                    Handlers.NULL_POINTER_EXCEPTION
+                );
 
+            }
         }
     }
-
-
-
 
 
     public static Boolean verifyLoss(SecondFragment.gameTile currTile) {
@@ -149,10 +142,7 @@ public class Game_Manager {
             Log.d(SecondFragment.ERROR_TAG, "Tile couldn't be extracted since it doesn't exist");
             return false;
         }
-        if (currTile.getNumericValue() == 0) {
-            return true;
-        }
-        return false;
+        return currTile.getNumericValue() == 0;
     }
 
     public Boolean verifyWin() {
