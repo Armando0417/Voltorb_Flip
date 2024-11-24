@@ -35,7 +35,6 @@ public class FirstFragment extends Fragment {
 
     HashMap<Integer, Bitmap> imageTable;
     ArrayList<Integer> explosionAnimations;
-    private SoundPool soundpool;
 
 
     @Override
@@ -60,14 +59,14 @@ public class FirstFragment extends Fragment {
             frontImage.setRotationY(90);
             frontImage.animate().rotationY(0).setDuration(150);
         }).start();
-        soundpool.play(2, 1, 1, 0, 0, 1);
+        Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
     }
 
 
     private void loadFiles() {
         imageTable = new HashMap<>();
         explosionAnimations = new ArrayList<>();
-        soundpool = new SoundPool.Builder().setMaxStreams(10).build();
+
         animationOverlay = binding.animationOverlay;
 
         imageTable.put(0, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb));
@@ -96,10 +95,6 @@ public class FirstFragment extends Fragment {
             decodedExplosionFrames.add(decodedFrame);
         }
 
-        soundpool.load(getContext(), R.raw.explosion_sfx, 1);
-        soundpool.load(getContext(), R.raw.flip_tile_sfx, 1);
-        soundpool.load(getContext(), R.raw.increase_point_sfx, 1);
-        soundpool.load(getContext(), R.raw.storing_points_sfx, 1);
 
     }
 
@@ -165,22 +160,23 @@ public class FirstFragment extends Fragment {
 
         Utilities.delayedHandler(() -> {
             tileTable.get("tile1Back").setVisibility(View.VISIBLE);
-            soundpool.play(3, 1, 1, 0, 0, 1);
+            Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
         }, 500);
 
         Utilities.delayedHandler(() -> {
             tileTable.get("tile2Back").setVisibility(View.VISIBLE);
-            soundpool.play(3, 1, 1, 0, 0, 1);
+            Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
+
         }, 1000);
 
         Utilities.delayedHandler(() -> {
             tileTable.get("tile3Back").setVisibility(View.VISIBLE);
-            soundpool.play(3, 1, 1, 0, 0, 1);
+            Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
         }, 1500);
 
         Utilities.delayedHandler(() -> {
             tileTable.get("tileExpBack").setVisibility(View.VISIBLE);
-            soundpool.play(3, 1, 1, 0, 0, 1);
+            Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
         }, 2000);
 
         Utilities.delayedHandler(() -> {
@@ -221,14 +217,13 @@ public class FirstFragment extends Fragment {
             handler.postDelayed(() -> {
                 float currentTranslationX = binding.gameTitleShadow.getTranslationX();
                 binding.gameTitleShadow.setTranslationX(currentTranslationX * -1);
-                Log.d("Title:", "Updated shadow placement");
             }, delay);
         }
 
 
         binding.startButton.setOnClickListener(v -> {
                 handler.removeCallbacksAndMessages(null);
-                soundpool.play(4, 1, 1, 0, 0, 1);
+                    Utilities.playSound(Utilities.SoundEffects.STORING_POINTS_SFX);
                 NavHostFragment.findNavController(FirstFragment.this)
                         .navigate(R.id.action_FirstFragment_to_SecondFragment);
                 }
@@ -295,8 +290,9 @@ public class FirstFragment extends Fragment {
             });
             animator.start();
 
+            Utilities.playSound(Utilities.SoundEffects.EXPLOSION_SFX);
 
-            soundpool.play(1, 1, 1, 0, 0, 1);
+//            soundpool.play(1, 1, 1, 0, 0, 1);
             // Add animation end listener
             animator.addListener(new AnimatorListenerAdapter() {
                 @Override

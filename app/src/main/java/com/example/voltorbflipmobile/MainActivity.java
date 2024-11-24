@@ -55,8 +55,7 @@ public class MainActivity extends AppCompatActivity {
         background_song.setLooping(true);
         background_song.setVolume(0.3f, 0.3f);
 
-
-
+        Utilities.loadUtilityFiles(this);
     }
 
     @Override

@@ -146,8 +146,7 @@ public class Game_Manager {
     }
 
     public Boolean verifyWin() {
-        if ((tileCounter.getOrDefault(SecondFragment.tileTypes.ONE, 0) == 0)
-                && (tileCounter.getOrDefault(SecondFragment.tileTypes.TWO, 0) == 0)
+        if ( (tileCounter.getOrDefault(SecondFragment.tileTypes.TWO, 0) == 0)
                 && (tileCounter.getOrDefault(SecondFragment.tileTypes.THREE, 0) == 0)) {
             isWinningState = true;
         }

@@ -1,6 +1,5 @@
 package com.example.voltorbflipmobile;
 
-import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -173,7 +172,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     isFlipped = true;
                 });
             }).start();
-            fragment.playSound(fragment.flipTileSfx);
+            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
         }
 
         public void flipDown() {
@@ -185,7 +184,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     isFlipped = true;
                 });
             }).start();
-            fragment.playSound(fragment.flipTileSfx);
+            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
         }
 
 

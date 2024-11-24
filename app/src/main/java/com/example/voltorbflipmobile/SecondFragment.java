@@ -83,9 +83,6 @@ public class SecondFragment extends Fragment {
         Bitmap frontImage, backImage;
         public int[] horizPipeColor, vertPipeColor;
 
-
-
-
         int[] animationFrames;
 
         gameTile(tileTypes _value, Pair<Integer, Integer> _position, int _width, int _height) {
@@ -93,7 +90,7 @@ public class SecondFragment extends Fragment {
             this.position = _position;
             this.width = _width;
             this.height = _height;
-            backImage = imageTable.get(4);
+            backImage = Utilities.IMAGE_TABLE.get(4);
             horizPipeColor = new int[3];
             vertPipeColor = new int[3];
 
@@ -159,27 +156,27 @@ public class SecondFragment extends Fragment {
 
             switch (value){
                 case VOLTORB:
-                    frontImage = imageTable.get(0);
+                    frontImage = Utilities.IMAGE_TABLE.get(0);
                     break;
                 case ONE:
-                    frontImage = imageTable.get(1);
+                    frontImage = Utilities.IMAGE_TABLE.get(1);
                     break;
                 case TWO:
-                    frontImage = imageTable.get(2);
+                    frontImage = Utilities.IMAGE_TABLE.get(2);
                     break;
                 case THREE:
-                    frontImage = imageTable.get(3);
+                    frontImage = Utilities.IMAGE_TABLE.get(3);
                     break;
                 default:
-                    frontImage = imageTable.get(4);
+                    frontImage = Utilities.IMAGE_TABLE.get(4);
                     break;
             }
 
             if (value.ordinal() > 0) {
-                animationFrames = animationTable.get("points");
+                animationFrames = Utilities.ANIMATION_TABLE.get("points");
             }
             else {
-                animationFrames = animationTable.get("explosion");
+                animationFrames = Utilities.ANIMATION_TABLE.get("explosion");
             }
 
         }
@@ -236,24 +233,23 @@ public class SecondFragment extends Fragment {
 
             switch (relevantValue) {
                 case 0:
-                    tileColor = colorTable.get(colorTypes.GOLD);
+                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.GOLD);
                     break;
                 case 1:
-                    tileColor = colorTable.get(colorTypes.ROSE);
+                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.ROSE);
                     break;
                 case 2:
-                    tileColor = colorTable.get(colorTypes.MINT);
+                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.MINT);
                     break;
                 case 3:
-                    tileColor = colorTable.get(colorTypes.TEAL);
+                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.TEAL);
                     break;
                 default:
-                    tileColor = colorTable.get(colorTypes.WISTERA);
+                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.WISTERA);
                     break;
             }
 
         }
-
 
         int getTotalPoints() {
             return totalPoints;
@@ -467,16 +463,6 @@ public class SecondFragment extends Fragment {
 
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
 
-        AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_GAME)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build();
-
-
-        soundpool = new SoundPool.Builder().setMaxStreams(5).setAudioAttributes(audioAttributes).build();
-
-
-        loadFilesWithServiceThreading();
 
         createGrid(screenWidth);
 
@@ -566,7 +552,6 @@ public class SecondFragment extends Fragment {
         }
 
         // Position connectors after RecyclerView layout is complete
-
         recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -635,27 +620,27 @@ public class SecondFragment extends Fragment {
                     // Region Calculate relative positions for all tiles
 
                     // Right Tile
-                    int leftRelativeX = locationLeft[0] - overlayLocation[0];
-                    int rightRelativeY = locationRight[1] - overlayLocation[1];
+                        int leftRelativeX = locationLeft[0] - overlayLocation[0];
+                        int rightRelativeY = locationRight[1] - overlayLocation[1];
 
-                    Log.d(DEBUG_TAG, "The actual tile position for left is " + (locationLeft[1] - overlayLocation[1]) );
+
                     // Bottom Tile
                         int botRelativeX = locationBot[0] - overlayLocation[0];
 
-                // Calculate distance between tiles
-                    int horizDist = Math.abs(locationRight[0] - (locationLeft[0] + leftSideTile.getWidth()) - 10);
-                    int vertDist = Math.abs( locationBot[1] - (locationTop[1] + topTile.getHeight()) - 10);
+                    // Calculate distance between tiles
+                        int horizDist = Math.abs(locationRight[0] - (locationLeft[0] + leftSideTile.getWidth()) - 10);
+                        int vertDist = Math.abs( locationBot[1] - (locationTop[1] + topTile.getHeight()) - 10);
 
-                // Fetching both Tile Colors
-                    infoTile currHorizTile = null;
-                    infoTile currVertTile = null;
-                    if (startTileBot != 35) {
-                        currVertTile = (infoTile) flattenedBoard.get(startTileBot);
-                        currHorizTile = (infoTile) flattenedBoard.get(startTileRight);
-                    }
+                    // Fetching both Tile Colors
+                        infoTile currHorizTile = null;
+                        infoTile currVertTile = null;
+                        if (startTileBot != 35) {
+                            currVertTile = (infoTile) flattenedBoard.get(startTileBot);
+                            currHorizTile = (infoTile) flattenedBoard.get(startTileRight);
+                        }
 
-                    int currRowColor = (currHorizTile != null) ? currHorizTile.getColor() : Color.YELLOW;
-                    int currColColor =  (currVertTile != null) ? currVertTile.getColor() :Color.YELLOW;
+                        int currRowColor = (currHorizTile != null) ? currHorizTile.getColor() : Color.YELLOW;
+                        int currColColor =  (currVertTile != null) ? currVertTile.getColor() :Color.YELLOW;
 
                         startTileLeft += 6;
                         startTileRight += 6;
@@ -725,10 +710,6 @@ public class SecondFragment extends Fragment {
 
                         latch.countDown();
                     });
-
-
-
-
             }
 
                 try {
@@ -762,14 +743,7 @@ public class SecondFragment extends Fragment {
     // ================================================================
     // Region              Auxiliary Methods
     // ================================================================
-        public void playSound(Integer soundKey) {
-            try {
-                soundpool.play(soundTable.get(soundKey), 1, 1, 0, 0, 1);
-            }
-            catch (Exception e) {
-                Log.d(ERROR_TAG, "Error: " + e.getMessage());
-            }
-        }
+
 
     @NonNull
     private static FrameLayout.LayoutParams getLayoutParams(View tileView, gameTile currentTile, int frameIndex) {
@@ -788,99 +762,13 @@ public class SecondFragment extends Fragment {
         return new FrameLayout.LayoutParams (width, height);
     }
 
-
-    private void loadFilesWithServiceThreading() {
-            CountDownLatch latch = new CountDownLatch(1);
-
-            try {
-                executorService.submit(() -> {
-                    imageTable.put(0, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb));
-                    imageTable.put(1, BitmapFactory.decodeResource(getResources(), R.drawable.one));
-                    imageTable.put(2, BitmapFactory.decodeResource(getResources(), R.drawable.two));
-                    imageTable.put(3, BitmapFactory.decodeResource(getResources(), R.drawable.three));
-                    imageTable.put(4, BitmapFactory.decodeResource(getResources(), R.drawable.big_back_of_tile));
-                    imageTable.put(5, BitmapFactory.decodeResource(getResources(), R.drawable.voltorb_mini));
-
-                    latch.countDown();
-                });
-
-                executorService.submit(() -> {
-                    animationTable.put("points", new int[]{
-                            R.drawable.animation_points_0,
-                            R.drawable.animation_points_1,
-                            R.drawable.animation_points_2,
-                            R.drawable.animation_points_3
-                    });
-
-                    animationTable.put("explosion", new int[]{
-                            R.drawable.animation_explosion_0_final,
-                            R.drawable.animation_explosion_1_final,
-                            R.drawable.animation_explosion_2_final,
-                            R.drawable.animation_explosion_3_final,
-                            R.drawable.animation_explosion_4_final,
-                            R.drawable.animation_explosion_5_final,
-                            R.drawable.animation_explosion_6_final,
-                            R.drawable.animation_explosion_7_final,
-                            R.drawable.animation_explosion_8_final
-                    });
-
-                    List<Bitmap> decodedPointFrames = new ArrayList<>();
-                    List<Bitmap> decodedExplosionFrames = new ArrayList<>();
-
-                    for (int id = 0; id < Objects.requireNonNull(animationTable.get("explosion")).length; id++) {
-                        int[] explosionIds = Objects.requireNonNull(animationTable.get("explosion"));
-                        int[] pointIds = Objects.requireNonNull(animationTable.get("points"));
-
-                        if (id < Objects.requireNonNull(animationTable.get("points")).length) {
-                            decodedPointFrames.add(BitmapFactory.decodeResource(getResources(), pointIds[id]));
-                        }
-
-                        decodedExplosionFrames.add(BitmapFactory.decodeResource(getResources(), explosionIds[id]));
-                    }
-
-                    decodedAnimTable.put(0, decodedExplosionFrames);
-                    decodedAnimTable.put(1, decodedPointFrames);
-
-                });
-
-                executorService.submit(() -> {
-                    soundTable.put(explosionSfx, soundpool.load(getContext(), R.raw.explosion_sfx, 1));
-                    soundTable.put(increasePointSfx, soundpool.load(getContext(), R.raw.increase_point_sfx, 1));
-                    soundTable.put(flipTileSfx, soundpool.load(getContext(), R.raw.flip_tile_sfx, 1));
-                    soundTable.put(storingPointsSfx, soundpool.load(getContext(), R.raw.storing_points_sfx, 1));
-                    soundTable.put(levelCompleteSfx, soundpool.load(getContext(), R.raw.level_complete_sfx, 1));
-
-                    colorTable.put(colorTypes.ROSE, new int[]{220, 117, 143});
-                    colorTable.put(colorTypes.MINT, new int[]{0, 204, 163});
-                    colorTable.put(colorTypes.TEAL, new int[]{0, 128, 128});
-                    colorTable.put(colorTypes.WISTERA, new int[]{180, 160, 229});
-                    colorTable.put(colorTypes.GOLD, new int[]{243, 176, 43});
-                });
-
-            latch.await();
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    // Code to display the board or transition to the next screen
-                    Log.d(DEBUG_TAG, "Board is now fully loaded and displayed.");
-                }, 500); // 500ms delay
-
-            }
-            catch (Exception e) {
-                Log.d(ERROR_TAG, "Error: " + e.getMessage());
-            }
-
-            finally {
-                Log.d(SUCCESS_TAG, "Images loaded successfully");
-            }
-    }
-
-
     public void playOverlayAnimation(int[] animationFrames, View tileView, gameTile currentTile) {
             if (isAnimating) {
-                Log.d("DEBUG", "Animation is already running.");
+                Utilities.logError("Animation currently being played, actions are disabled");
                 return;
             }
-            isAnimating = true;
 
+            isAnimating = true;
             // Get tile's position on the screen
             int[] location = new int[2];
             tileView.getLocationOnScreen(location);
@@ -894,12 +782,12 @@ public class SecondFragment extends Fragment {
 
 
             List<Bitmap> preloadedFrames = (currentTile.getNumericValue() == 0)
-                    ? decodedAnimTable.get(0)
-                    : decodedAnimTable.get(1);
+                    ? Utilities.DECODED_ANIM_TABLE.get(0)
+                    : Utilities.DECODED_ANIM_TABLE.get(1);
 
             requireActivity().runOnUiThread(() -> {
                 if (preloadedFrames == null || preloadedFrames.isEmpty()) {
-                    Log.d("DEBUG", "No preloaded frames available.");
+                    Utilities.logError("No preloaded frames loaded, Cancelling animations");
                     isAnimating = false;
                     return;
                 }
@@ -932,12 +820,13 @@ public class SecondFragment extends Fragment {
                 });
                 animator.start();
                 if (currentTile.getNumericValue() == 0) {
-                    playSound(explosionSfx);
-                    Log.d(DEBUG_TAG, "Explosion went off");
+                    Utilities.playSound(Utilities.SoundEffects.EXPLOSION_SFX);
+                    Utilities.logDebug("Explosion Sound was played!");
                 }
                 else {
-                    playSound(increasePointSfx);
+                    Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
                 }
+
                 animator.addListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
@@ -945,15 +834,13 @@ public class SecondFragment extends Fragment {
 
                         gm.updateBoard(currentTile);
 
-
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             if (Game_Manager.verifyLoss(currentTile)) {
                                 Log.d(DEBUG_TAG, "Lose Works!");
-//                                triggerLoseAnimation();
                             }
                             if (gm.verifyWin()) {
                                 Log.d(DEBUG_TAG, "Win Works!");
-                                playSound(levelCompleteSfx);
+                                Utilities.playSound(Utilities.SoundEffects.LEVEL_COMPLETE_SFX);
                             }
                         }, 500);
 
@@ -1046,8 +933,6 @@ public class SecondFragment extends Fragment {
 
         private void flattenBoard() {
             for (ArrayList<Tile> row : finalBoard) {
-                Log.d(DEBUG_TAG, "Size of final board is " + finalBoard.size());
-                Log.d(DEBUG_TAG, "row size is: " + row.size());
                 for (Tile curr : row) {
                     if (curr != null) {
                         flattenedBoard.add(curr);
