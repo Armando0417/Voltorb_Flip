@@ -22,7 +22,7 @@ public class Game_Manager {
     private static CountDownTimer countDownTimer;
     public static boolean isTimerRunning = false;
     public static boolean isLosingState = false;
-    public boolean isWinningState = false;
+    public static boolean isWinningState = false;
 
     public static void startCountdownTimer() {
         countDownTimer = new CountDownTimer(350, 1000) {
@@ -146,9 +146,15 @@ public class Game_Manager {
     }
 
     public Boolean verifyWin() {
-        return (tileCounter.getOrDefault(SecondFragment.tileTypes.ONE, 0) == 0)
+        if ((tileCounter.getOrDefault(SecondFragment.tileTypes.ONE, 0) == 0)
                 && (tileCounter.getOrDefault(SecondFragment.tileTypes.TWO, 0) == 0)
-                && (tileCounter.getOrDefault(SecondFragment.tileTypes.THREE, 0) == 0);
+                && (tileCounter.getOrDefault(SecondFragment.tileTypes.THREE, 0) == 0)) {
+            isWinningState = true;
+        }
+        else {
+            isWinningState = false;
+        }
+        return isWinningState;
     }
 
 

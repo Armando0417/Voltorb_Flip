@@ -341,9 +341,6 @@ public class SecondFragment extends Fragment {
         }
 
 
-
-
-
         //end of class infoTile
     }
 
@@ -486,7 +483,6 @@ public class SecondFragment extends Fragment {
 
         executorService.submit(() -> {
             gm = new Game_Manager(finalBoard, binding.getRoot().getRootView().findViewById(R.id.scoreboard));
-//            gm.countBoard();
 
             flattenedBoard = new ArrayList<>();
             flattenBoard();
@@ -996,9 +992,6 @@ public class SecondFragment extends Fragment {
             }, col * 500);
         }
     }
-
-
-
 
 
 

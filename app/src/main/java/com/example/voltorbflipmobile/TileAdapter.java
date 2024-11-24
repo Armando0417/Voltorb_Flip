@@ -117,12 +117,17 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             int[] animationFrames = tile.getAnimationFrames();
 
 
-            currentFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
+//            currentFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
 
             backImage.setOnClickListener(v -> {
                 if (Game_Manager.isLosingState) {
                     Log.d(SecondFragment.DEBUG_TAG, "Lose animation in progress. No action allowed.");
+                    return;
+                }
+
+                else if (Game_Manager.isWinningState) {
+                    Log.d(SecondFragment.DEBUG_TAG, "Win animation in progress. No action allowed.");
                     return;
                 }
 
