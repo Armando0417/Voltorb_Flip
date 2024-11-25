@@ -8,6 +8,8 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
+
 public class Game_Manager {
 
     ArrayList<ArrayList<SecondFragment.Tile>> board;
@@ -77,11 +79,10 @@ public class Game_Manager {
         catch (Exception e) {
             Log.d(SecondFragment.ERROR_TAG, "Loaded wrong");
         }
+
     }
 
-
-    private void prepareNumber(int num) {
-
+    public void prepareNumber(int num) {
         currScore = num * currScore;
         if (currScore == 0) {
             currScore = num;
@@ -89,12 +90,17 @@ public class Game_Manager {
 
         scoreText = String.valueOf(currScore);
 
+        StringBuilder strBuilder = new StringBuilder(scoreText);
+
         if (scoreText.length() < 5) {
-            while (scoreText.length() < 5) {
-                scoreText = "0" + scoreText;
+            while (strBuilder.length() < 5) {
+                strBuilder.insert(0, "0");
             }
+            scoreText = strBuilder.toString();
         }
-        Log.d(SecondFragment.DEBUG_TAG, "Final Number is: " + scoreText);
+        if (scoreText.length() >= 6)
+            scoreText = "99999";
+
     }
 
 
@@ -104,8 +110,7 @@ public class Game_Manager {
                 if (tile instanceof SecondFragment.gameTile) {
                     SecondFragment.gameTile currTile = (SecondFragment.gameTile) tile;
 
-                    // Increment the count for the tile type in tileCounter
-                    tileCounter.put(currTile.getType(), tileCounter.getOrDefault(currTile.getType(), 0) + 1);
+                    tileCounter.compute(currTile.getType(), (k, v) -> v == null ? 1 : v + 1);
                 }
             }
         }
@@ -117,8 +122,13 @@ public class Game_Manager {
             return;
         }
 
-        if (currTile.getNumericValue() > 0 && tileCounter.getOrDefault(currTile.getType(), 0) > 0) {
-            tileCounter.put(currTile.getType(), tileCounter.get(currTile.getType()) - 1);
+        if (currTile.getNumericValue() > 0
+                && Objects.requireNonNull( tileCounter.get(currTile.getType()) )  > 0)
+        {
+            tileCounter.compute(currTile.getType(), (k, v) -> v == null ? -1 : v - 1);
+
+            if (Objects.requireNonNull( tileCounter.get(currTile.getType()) ) == -1 )
+                Utilities.logError("Tile Counter for " + currTile.getType().toString() + " is -1! ");
 
             prepareNumber(currTile.getNumericValue());
 
@@ -126,7 +136,7 @@ public class Game_Manager {
                 int finalI = i;
                 Utilities.tryCatch(
                     () -> {
-                            TextView currDigit = (TextView) scoreMap.get(finalI);
+                            TextView currDigit = Objects.requireNonNull ( (TextView) scoreMap.get(finalI) );
                             currDigit.setText(String.valueOf(scoreText.charAt(finalI)));
                         },
                     Handlers.NULL_POINTER_EXCEPTION
@@ -146,13 +156,11 @@ public class Game_Manager {
     }
 
     public Boolean verifyWin() {
-        if ( (tileCounter.getOrDefault(SecondFragment.tileTypes.TWO, 0) == 0)
-                && (tileCounter.getOrDefault(SecondFragment.tileTypes.THREE, 0) == 0)) {
-            isWinningState = true;
-        }
-        else {
-            isWinningState = false;
-        }
+        int totalTwo = Objects.requireNonNull(tileCounter.get(SecondFragment.tileTypes.TWO));
+        int totalThree = Objects.requireNonNull(tileCounter.get(SecondFragment.tileTypes.THREE));
+
+        isWinningState = totalTwo == 0 && totalThree == 0;
+
         return isWinningState;
     }
 

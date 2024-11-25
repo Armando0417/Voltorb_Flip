@@ -5,7 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.SoundPool;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -25,7 +25,8 @@ import com.example.voltorbflipmobile.databinding.FragmentFirstBinding;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+
+import java.util.Objects;
 
 public class FirstFragment extends Fragment {
 
@@ -38,7 +39,7 @@ public class FirstFragment extends Fragment {
 
 
     @Override
-    public View onCreateView(
+    public View onCreateView (
             @NonNull LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState
     ) {
@@ -88,12 +89,12 @@ public class FirstFragment extends Fragment {
 
         ArrayList<Integer> explosionIds = explosionAnimations;
 
-        List<Bitmap> decodedExplosionFrames = new ArrayList<>();
-
-        for (Integer explosionId : explosionIds) {
-            Bitmap decodedFrame = BitmapFactory.decodeResource(getResources(), explosionId);
-            decodedExplosionFrames.add(decodedFrame);
-        }
+//        List<Bitmap> decodedExplosionFrames = new ArrayList<>();
+//
+//        for (Integer explosionId : explosionIds) {
+//            Bitmap decodedFrame = BitmapFactory.decodeResource(getResources(), explosionId);
+//            decodedExplosionFrames.add(decodedFrame);
+//        }
 
 
     }
@@ -159,41 +160,41 @@ public class FirstFragment extends Fragment {
 
 
         Utilities.delayedHandler(() -> {
-            tileTable.get("tile1Back").setVisibility(View.VISIBLE);
+            Objects.requireNonNull(tileTable.get("tile1Back")).setVisibility(View.VISIBLE);
             Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
         }, 500);
 
         Utilities.delayedHandler(() -> {
-            tileTable.get("tile2Back").setVisibility(View.VISIBLE);
+            Objects.requireNonNull(tileTable.get("tile2Back")).setVisibility(View.VISIBLE);
             Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
 
         }, 1000);
 
         Utilities.delayedHandler(() -> {
-            tileTable.get("tile3Back").setVisibility(View.VISIBLE);
+            Objects.requireNonNull(tileTable.get("tile3Back")).setVisibility(View.VISIBLE);
             Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
         }, 1500);
 
         Utilities.delayedHandler(() -> {
-            tileTable.get("tileExpBack").setVisibility(View.VISIBLE);
+            Objects.requireNonNull(tileTable.get("tileExpBack")).setVisibility(View.VISIBLE);
             Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
         }, 2000);
 
         Utilities.delayedHandler(() -> {
-            flipTile((ImageView) tileTable.get("tile1Back"), (ImageView) tileTable.get("tile1Front"));
+            flipTile((ImageView) Objects.requireNonNull(tileTable.get("tile1Back")), (ImageView) tileTable.get("tile1Front"));
         }, 2500);
 
         Utilities.delayedHandler(() -> {
-            flipTile((ImageView) tileTable.get("tile2Back"), (ImageView) tileTable.get("tile2Front"));
+            flipTile((ImageView) Objects.requireNonNull(tileTable.get("tile2Back")), (ImageView) tileTable.get("tile2Front"));
         }, 3000);
 
         Utilities.delayedHandler(() -> {
-            flipTile((ImageView) tileTable.get("tile3Back"), (ImageView) tileTable.get("tile3Front"));
+            flipTile((ImageView) Objects.requireNonNull(tileTable.get("tile3Back")), (ImageView) tileTable.get("tile3Front"));
         }, 3500);
 
         Utilities.delayedHandler(() -> {
-            flipTile((ImageView) tileTable.get("tileExpBack"), (ImageView) tileTable.get("tileExpFront"));
-            playOverlayAnimationSingleTile(explosionAnimations, tileTable.get("tileExpFront"));
+            flipTile((ImageView) Objects.requireNonNull(tileTable.get("tileExpBack")), (ImageView) tileTable.get("tileExpFront"));
+            playOverlayAnimationSingleTile(explosionAnimations, Objects.requireNonNull(tileTable.get("tileExpFront")));
         }, 4000);
 
         Utilities.delayedHandler(() -> {

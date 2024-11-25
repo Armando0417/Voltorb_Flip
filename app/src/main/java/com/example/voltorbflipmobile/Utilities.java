@@ -4,7 +4,6 @@ import static com.example.voltorbflipmobile.Utilities.ColorTypes.*;
 import static com.example.voltorbflipmobile.Utilities.SoundEffects.*;
 import static com.example.voltorbflipmobile.Utilities.ImageTypes.*;
 
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -24,6 +23,35 @@ import java.util.concurrent.Executors;
 
 
 public class Utilities {
+
+    /*
+    Shared Tables:
+        - ANIMATION_TABLE -> Stores the original animation frames for the tiles
+        - DECODED_ANIM_TABLE -> Stores the decoded animation frames for the tiles
+        - COLOR_TABLE -> Stores the color values for the ColorTypes enum
+        - SOUND_TABLE -> Stores the sound values for the SoundEffects enum
+        - IMAGE_TABLE -> Stores the image values for the ImageTypes enum (the tileTypes)
+
+    Methods:
+        - loadUtilityFiles(Context context) -> just for storing all of the data at start
+
+        - playSound(SoundEffects soundKey) -> Plays the sounds from the SoundEffects enum
+
+        - createExecutorService (int threads) -> Creates a thread pool with the given number of threads
+
+        - Logs:
+            - logDebug(String msg) -> logs something with the debug tag attached
+            - logError(String msg) -> logs something with the error tag attached
+
+        - tryCatch(Runnable function, ExceptionHandler fallback)
+            -> use it for making smaller try-catch blocks
+
+        - logExecutionTime(Runnable task, String taskName)
+            -> Wrap it around code to time how long it'll take
+
+        - delayedHandler(Runnable task, long delay) -> Use it to make a delayed action without the
+            jargon
+     */
 
     // ================================================================
     //                        Constants
@@ -203,6 +231,8 @@ public class Utilities {
     public static void delayedHandler(Runnable task, long delay) {
         new Handler(Looper.getMainLooper()).postDelayed(task, delay);
     }
+
+
 
 
 

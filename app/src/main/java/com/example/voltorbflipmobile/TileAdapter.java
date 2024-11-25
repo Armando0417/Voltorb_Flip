@@ -35,11 +35,11 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public int getItemViewType(int position) {
         int row = position / board.size();
         int col = position % board.size();
-        if (board.get(row).get(col) instanceof SecondFragment.gameTile) {
+
+        if (board.get(row).get(col) instanceof SecondFragment.gameTile)
             return GAME_TILE;
-        } else {
+        else
             return INFO_TILE;
-        }
     }
 
     @NonNull
@@ -90,11 +90,9 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     -------------------------*/
 
-    public class GameTileHolder extends RecyclerView.ViewHolder {
+    public static class GameTileHolder extends RecyclerView.ViewHolder {
         private final ImageView frontImage;
         private final ImageView backImage;
-
-        private final ImageView currentFrame;
 
 
         private boolean isFlipped = false;
@@ -106,7 +104,6 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             super(itemView);
             frontImage = itemView.findViewById(R.id.front_image);
             backImage = itemView.findViewById(R.id.back_image);
-            currentFrame = itemView.findViewById(R.id.animation_frame);
 
         }
 
@@ -115,24 +112,17 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
 
-
-//            currentFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
-
-
             backImage.setOnClickListener(v -> {
-                if (Game_Manager.isLosingState) {
+                if (Game_Manager.isLosingState)
                     Log.d(SecondFragment.DEBUG_TAG, "Lose animation in progress. No action allowed.");
-                    return;
-                }
 
-                else if (Game_Manager.isWinningState) {
+                else if (Game_Manager.isWinningState)
                     Log.d(SecondFragment.DEBUG_TAG, "Win animation in progress. No action allowed.");
-                    return;
-                }
 
-                else if (Game_Manager.isTimerRunning()) {
+                else if (Game_Manager.isTimerRunning())
                     Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked and Animation Not Started");
-                }
+
+
                 else {
                     Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked and Animation Started");
                     isAnimating = true;
@@ -141,9 +131,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
                     flipUp();
 
-
                     if (!Game_Manager.isLosingState) {
-
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             try {
                                 currFragment.playOverlayAnimation(animationFrames, itemView, tile);

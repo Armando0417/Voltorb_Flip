@@ -5,17 +5,13 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
+
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.InsetDrawable;
 import android.graphics.drawable.LayerDrawable;
-import android.media.AudioAttributes;
-import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -28,9 +24,7 @@ import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.helper.widget.Grid;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -40,19 +34,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.voltorbflipmobile.databinding.FragmentSecondBinding;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 public class SecondFragment extends Fragment {
-
-
-
 
 
     // ================================================================
@@ -68,12 +57,11 @@ public class SecondFragment extends Fragment {
 
     }
 
-
     // ================================================================
     //                      Class gameTile
     // ================================================================
 
-    public class gameTile implements Tile {
+    public static class gameTile implements Tile {
         tileTypes value;
         Pair<Integer, Integer> position;
         Pair<Integer, Integer> row_col; // row index 0, col index 1
@@ -180,7 +168,6 @@ public class SecondFragment extends Fragment {
             }
 
         }
-
         public int getHorizColor() {
             return Color.rgb(horizPipeColor[0], horizPipeColor[1], horizPipeColor[2]);
         }
@@ -188,12 +175,9 @@ public class SecondFragment extends Fragment {
             return Color.rgb(vertPipeColor[0], vertPipeColor[1], vertPipeColor[2]);
         }
 
-
-
-
     }
 
-    public class infoTile implements Tile {
+    public static class infoTile implements Tile {
 
         private int totalPoints;
         private int totalBombs;
@@ -214,7 +198,7 @@ public class SecondFragment extends Fragment {
             this.height = _height;
             this.markCol = _markCol;
 
-            miniVoltorb = imageTable.get(5);
+            miniVoltorb = Utilities.IMAGE_TABLE.get(5);
         }
 
         void set_row_col(int _row, int _col) {
@@ -302,7 +286,6 @@ public class SecondFragment extends Fragment {
                 }
             }
         }
-
 
         @Override
         public int getWidth() {
@@ -401,13 +384,7 @@ public class SecondFragment extends Fragment {
     }
 
 
-    // Region ======== Image Tables ========
-    private final HashMap<String, int[] > animationTable = new HashMap<>();
 
-    private final HashMap<Integer, Bitmap> imageTable = new HashMap<>();
-    private final HashMap<colorTypes, int[]> colorTable = new HashMap<>();
-
-    private final HashMap<Integer, List<Bitmap>> decodedAnimTable = new HashMap<>();
 
 
 
@@ -418,7 +395,7 @@ public class SecondFragment extends Fragment {
     ProgressBar loadingIndicator;
     public Game_Manager gm;
 
-    ExecutorService executorService = Executors.newFixedThreadPool(3);
+    ExecutorService executorService = Utilities.createExecutorService(3);
 
     private ArrayList<ArrayList<Tile>> finalBoard;
     private ArrayList<Tile> flattenedBoard;
@@ -426,19 +403,6 @@ public class SecondFragment extends Fragment {
     public boolean isAnimating = false;
     private static final Integer BOARD_SIZE = 5;
     private static final Integer TOTAL_SIZE = 6;
-
-
-
-    // Region ======== Sound Tables ========
-
-    public final HashMap<Integer, Integer> soundTable = new HashMap<>();
-    private SoundPool soundpool;
-    public final Integer flipTileSfx = 1;
-    public final Integer increasePointSfx = 2;
-    public final Integer explosionSfx = 3;
-
-    public final Integer storingPointsSfx = 4;
-    public final Integer levelCompleteSfx = 5;
 
 
     // ================================================================
@@ -463,9 +427,7 @@ public class SecondFragment extends Fragment {
 
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
 
-
         createGrid(screenWidth);
-
 
         executorService.submit(() -> {
             gm = new Game_Manager(finalBoard, binding.getRoot().getRootView().findViewById(R.id.scoreboard));
@@ -477,9 +439,9 @@ public class SecondFragment extends Fragment {
 
         MainActivity mainActivity = (MainActivity) getActivity();
 
-        if (mainActivity != null) {
+        if (mainActivity != null)
             mainActivity.startMusic();
-        }
+
 
 
         return binding.getRoot();
@@ -576,15 +538,14 @@ public class SecondFragment extends Fragment {
 
                     //? Gradient Inset Rectangle
                     GradientDrawable horizOuterRect = new GradientDrawable();
-                    horizOuterRect.setShape(GradientDrawable.RECTANGLE);
-                    horizOuterRect.setColor(ContextCompat.getColor(getContext(), R.color.white));
-                    horizOuterRect.setSize(0, 0);
-
+                        horizOuterRect.setShape(GradientDrawable.RECTANGLE);
+                        horizOuterRect.setColor(ContextCompat.getColor(requireContext(), R.color.white));
+                        horizOuterRect.setSize(0, 0);
 
                     GradientDrawable vertOuterRect = new GradientDrawable();
-                    vertOuterRect.setShape(GradientDrawable.RECTANGLE);
-                    vertOuterRect.setColor(ContextCompat.getColor(getContext(), R.color.white));
-                    vertOuterRect.setSize(0, 0);
+                        vertOuterRect.setShape(GradientDrawable.RECTANGLE);
+                        vertOuterRect.setColor(ContextCompat.getColor(getContext(), R.color.white));
+                        vertOuterRect.setSize(0, 0);
 
 
                     //? Inner Rectangle
@@ -769,6 +730,7 @@ public class SecondFragment extends Fragment {
             }
 
             isAnimating = true;
+
             // Get tile's position on the screen
             int[] location = new int[2];
             tileView.getLocationOnScreen(location);
@@ -806,19 +768,19 @@ public class SecondFragment extends Fragment {
 
                     FrameLayout.LayoutParams params = getLayoutParams(tileView, currentTile, frameIndex);
 
-                    // Calculate new center position to keep animation centered
-                        int offsetX = (params.width - tileView.getWidth()) / 2;
-                        int offsetY = (params.height - tileView.getHeight()) / 2;
-                        params.leftMargin = tileRelativeX - offsetX;
-                        params.topMargin = tileRelativeY - offsetY;
-                        animationView.setLayoutParams(params);
+                    int offsetX = (params.width - tileView.getWidth()) / 2;
+                    int offsetY = (params.height - tileView.getHeight()) / 2;
+                    params.leftMargin = tileRelativeX - offsetX;
+                    params.topMargin = tileRelativeY - offsetY;
 
                     animationView.setLayoutParams(params);
 
                     // Set the preloaded bitmap for the current frame
                     animationView.setImageBitmap(currentBitmap);
                 });
+
                 animator.start();
+
                 if (currentTile.getNumericValue() == 0) {
                     Utilities.playSound(Utilities.SoundEffects.EXPLOSION_SFX);
                     Utilities.logDebug("Explosion Sound was played!");
@@ -837,6 +799,8 @@ public class SecondFragment extends Fragment {
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             if (Game_Manager.verifyLoss(currentTile)) {
                                 Log.d(DEBUG_TAG, "Lose Works!");
+                                triggerLoseAnimation();
+
                             }
                             if (gm.verifyWin()) {
                                 Log.d(DEBUG_TAG, "Win Works!");
@@ -873,7 +837,8 @@ public class SecondFragment extends Fragment {
                         TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
 
 
-                        tileHolder.flipUp();
+                        tileHolder.flipDown();
+                        Game_Manager.isWinningState = false;
                     }
                 }
             }, col * 500);
