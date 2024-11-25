@@ -850,7 +850,12 @@ public class SecondFragment extends Fragment {
     private void createGrid(int screenWidth) {
         int tileDimensions = screenWidth / 10;
 
-        ArrayList<ArrayList<Integer>> testBoard = testBoardGenerator();
+        finalBoard = new ArrayList<>(TOTAL_SIZE);
+        for (int i = 0; i < TOTAL_SIZE; i++) {
+            finalBoard.add(new ArrayList<>(TOTAL_SIZE));
+        }
+
+        ArrayList<ArrayList<Integer>> testBoard = Game_Manager.generateNewBoard();
 
         // Create the grid
         for (int row = 0; row < TOTAL_SIZE; row++) {
@@ -903,37 +908,36 @@ public class SecondFragment extends Fragment {
                         flattenedBoard.add(curr);
                     }
                 }
-
-                }
             }
-
-
-        private ArrayList<ArrayList<Integer>> testBoardGenerator() {
-            finalBoard = new ArrayList<>(TOTAL_SIZE);
-            for (int i = 0; i < TOTAL_SIZE; i++) {
-                finalBoard.add(new ArrayList<>(TOTAL_SIZE));
-            }
-
-        /*
-            Test Board Layout:
-                0 3 1 3 2 0
-                0 0 0 0 2 0
-                0 2 1 3 0 0
-                0 0 1 3 0 0
-                1 2 3 2 1 0
-                0 0 0 0 0 _
-         */
-
-            ArrayList<ArrayList<Integer>> testBoard = new ArrayList<>();
-            testBoard.add(new ArrayList<>(Arrays.asList(0, 3, 1, 3, 2, 0)));
-            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 0, 0, 2, 0)));
-            testBoard.add(new ArrayList<>(Arrays.asList(0, 2, 1, 3, 0, 0)));
-            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 1, 3, 0, 0)));
-            testBoard.add(new ArrayList<>(Arrays.asList(1, 2, 3, 2, 1, 0)));
-            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 0, 0, 0, 0)));
-
-            return testBoard;
         }
+
+
+//        private ArrayList<ArrayList<Integer>> testBoardGenerator() {
+//            finalBoard = new ArrayList<>(TOTAL_SIZE);
+//            for (int i = 0; i < TOTAL_SIZE; i++) {
+//                finalBoard.add(new ArrayList<>(TOTAL_SIZE));
+//            }
+//
+//        /*
+//            Test Board Layout:
+//                0 3 1 3 2 0
+//                0 0 0 0 2 0
+//                0 2 1 3 0 0
+//                0 0 1 3 0 0
+//                1 2 3 2 1 0
+//                0 0 0 0 0 _
+//         */
+//
+//            ArrayList<ArrayList<Integer>> testBoard = new ArrayList<>();
+//            testBoard.add(new ArrayList<>(Arrays.asList(0, 3, 1, 3, 2, 0)));
+//            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 0, 0, 2, 0)));
+//            testBoard.add(new ArrayList<>(Arrays.asList(0, 2, 1, 3, 0, 0)));
+//            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 1, 3, 0, 0)));
+//            testBoard.add(new ArrayList<>(Arrays.asList(1, 2, 3, 2, 1, 0)));
+//            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 0, 0, 0, 0)));
+//
+//            return testBoard;
+//        }
 
 
         private void populateInfoTiles() {

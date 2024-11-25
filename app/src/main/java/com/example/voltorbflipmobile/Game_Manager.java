@@ -8,7 +8,10 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.Random;
 
 public class Game_Manager {
 
@@ -66,6 +69,96 @@ public class Game_Manager {
         countBoard();
         loadScoreViews();
 
+    }
+
+    public static ArrayList<ArrayList<Integer>> generateNewBoard() {
+
+        ArrayList<ArrayList<Integer>> newBoard = new ArrayList<>();
+
+        final int BOARD_SIZE = 6;
+
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            ArrayList<Integer> newRow = new ArrayList<>();
+
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (row == 5 && col == 5)
+                    continue;
+
+                Random RandomNumGenerator = new Random();
+
+                int randomVal = RandomNumGenerator.nextInt(4);
+
+                newRow.add(randomVal);
+
+                if (row == 5 || col == 5)
+                    newRow.set(col, 0);
+            }
+            newBoard.add(newRow);
+        }
+
+        return new ArrayList<>(verifyBoard(newBoard));
+
+    }
+
+    private static ArrayList<ArrayList<Integer>> verifyBoard(ArrayList<ArrayList<Integer>> newBoard) {
+        ArrayList<ArrayList<Integer>> fixedBoard = new ArrayList<>();
+
+        HashMap<Integer, Integer> freqBoard = new HashMap<>();
+        Queue<Integer> rowsToCheck = new LinkedList<>();
+
+        final int GridSize = 5;
+
+        for (int row = 0; row < GridSize; row++) {
+            HashMap<Integer, Integer> freqRow = new HashMap<>();
+
+            for (int col = 0; col < GridSize; col++) {
+                if (freqRow.get(newBoard.get(row).get(col)) != null) {
+                    freqRow.compute(newBoard.get(row).get(col), (k, v) -> v == null ? 1 : v + 1);
+                }
+                if (freqBoard.get(newBoard.get(row).get(col)) != null) {
+                    freqBoard.compute(newBoard.get(row).get(col), (k, v) -> v == null ? 1 : v + 1);
+                }
+                freqRow.putIfAbsent(newBoard.get(row).get(col), 1);
+                freqBoard.putIfAbsent(newBoard.get(row).get(col), 1);
+
+
+
+            }
+            if (freqRow.getOrDefault(0, 0) > 4 ||
+                    freqRow.getOrDefault(1, 0) > 4 ||
+                    freqRow.getOrDefault(2, 0) > 4 ||
+                    freqRow.getOrDefault(3, 0) > 4) {
+                rowsToCheck.add(row);
+            }
+
+
+        }
+        fixedBoard = regenerateBoard(newBoard, rowsToCheck);
+
+        return fixedBoard;
+    }
+
+    private static ArrayList<ArrayList<Integer>> regenerateBoard(ArrayList<ArrayList<Integer>> newBoard, Queue<Integer> rowsToCheck) {
+        ArrayList<ArrayList<Integer>> fixedBoard = new ArrayList<>();
+        if (rowsToCheck.isEmpty()) {
+            fixedBoard = newBoard;
+            return fixedBoard;
+        }
+        while (!rowsToCheck.isEmpty()) {
+            int currRow = Objects.requireNonNull(rowsToCheck.poll());
+
+            for (int cell = 0; cell < 6; cell++) {
+                if (cell == 5) {
+                    fixedBoard.get(currRow).set(cell, 0);
+                }
+                else {
+                    Random RandomNumGenerator = new Random();
+                    int randomVal = RandomNumGenerator.nextInt(4);
+                    fixedBoard.get(currRow).set(cell, randomVal);
+                }
+            }
+        }
+        return fixedBoard;
     }
 
     public void loadScoreViews() {
