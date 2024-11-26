@@ -63,17 +63,13 @@ public class Utilities {
     // ================================================================
     //                        Enums
     // ================================================================
-    public enum ColorTypes {
-        ROSE, MINT, TEAL, WISTERA, GOLD
-    }
+    public enum ColorTypes { ROSE, MINT, TEAL, WISTERA, GOLD }
 
-    public enum SoundEffects {
-        EXPLOSION_SFX, FLIP_TILE_SFX, INCREASE_POINT_SFX, LEVEL_COMPLETE_SFX, STORING_POINTS_SFX
-    }
+    public enum SoundEffects { EXPLOSION_SFX, FLIP_TILE_SFX, INCREASE_POINT_SFX, LEVEL_COMPLETE_SFX, STORING_POINTS_SFX }
 
-    public enum ImageTypes {
-        VOLTORB, ONE, TWO, THREE, BACK_TILE, MINI_VOLTORB
-    }
+    public enum ImageTypes { VOLTORB, ONE, TWO, THREE, BACK_TILE, MINI_VOLTORB }
+
+    public enum TileTypes { VOLTORB, ONE, TWO, THREE }
 
     // ================================================================
     //                        Sound Effects

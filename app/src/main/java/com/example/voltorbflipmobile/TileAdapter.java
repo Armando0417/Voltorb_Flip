@@ -20,13 +20,13 @@ import java.util.ArrayList;
 
 
 public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private final ArrayList<ArrayList<SecondFragment.Tile>> board;
+    private final ArrayList<ArrayList<Tiles.Tile>> board;
 
     private static final int GAME_TILE = 0;
     private static final int INFO_TILE = 1;
     public final SecondFragment fragment;
 
-    public TileAdapter(ArrayList<ArrayList<SecondFragment.Tile>> board, SecondFragment fragment) {
+    public TileAdapter(ArrayList<ArrayList<Tiles.Tile>> board, SecondFragment fragment) {
         this.board = board;
         this.fragment = fragment;
     }
@@ -36,7 +36,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         int row = position / board.size();
         int col = position % board.size();
 
-        if (board.get(row).get(col) instanceof SecondFragment.gameTile)
+        if (board.get(row).get(col) instanceof Tiles.gameTile)
             return GAME_TILE;
         else
             return INFO_TILE;
@@ -65,12 +65,12 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         if (holder instanceof GameTileHolder) {
-            ((GameTileHolder) holder).bind((SecondFragment.gameTile) board.get(row).get(col), fragment);
+            ((GameTileHolder) holder).bind((Tiles.gameTile) board.get(row).get(col), fragment);
         }
         else {
             if (holder instanceof CustomInfoHolder) {
 
-                ((CustomInfoHolder) holder).bind((SecondFragment.infoTile) board.get(row).get(col)); // Bind infoTile data
+                ((CustomInfoHolder) holder).bind((Tiles.infoTile) board.get(row).get(col)); // Bind infoTile data
             } else {
                 Log.d("TileAdapter", "Invalid view holder type");
             }
@@ -107,24 +107,24 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         }
 
-        public void bind(SecondFragment.gameTile tile, SecondFragment currFragment) {
+        public void bind(Tiles.gameTile tile, SecondFragment currFragment) {
             backImage.setImageBitmap(tile.getBackImage());
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
 
             backImage.setOnClickListener(v -> {
                 if (Game_Manager.isLosingState)
-                    Log.d(SecondFragment.DEBUG_TAG, "Lose animation in progress. No action allowed.");
+                    Log.d(Utilities.DEBUG_TAG, "Lose animation in progress. No action allowed.");
 
                 else if (Game_Manager.isWinningState)
-                    Log.d(SecondFragment.DEBUG_TAG, "Win animation in progress. No action allowed.");
+                    Log.d(Utilities.DEBUG_TAG, "Win animation in progress. No action allowed.");
 
                 else if (Game_Manager.isTimerRunning())
-                    Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked and Animation Not Started");
+                    Log.d(Utilities.DEBUG_TAG, "Tile Clicked and Animation Not Started");
 
 
                 else {
-                    Log.d(SecondFragment.DEBUG_TAG, "Tile Clicked and Animation Started");
+                    Log.d(Utilities.DEBUG_TAG, "Tile Clicked and Animation Started");
                     isAnimating = true;
 
                     Game_Manager.startCountdownTimer();
@@ -134,13 +134,16 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     if (!Game_Manager.isLosingState) {
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             try {
+                                if (tile == null) {
+                                    Utilities.logDebug("Tile is null here!");
+                                }
                                 currFragment.playOverlayAnimation(animationFrames, itemView, tile);
                             }
                             catch (Exception e) {
-                                Log.d(SecondFragment.ERROR_TAG, "Error: " + e.getMessage());
+                                Log.d(Utilities.ERROR_TAG, "Error: " + e.getMessage());
                             }
                             finally {
-                                Log.d(SecondFragment.DEBUG_TAG, "Animation Ended");
+                                Log.d(Utilities.DEBUG_TAG, "Animation Ended");
                                 currFragment.isAnimating = false;
                                 isAnimating = false;
                             }
@@ -201,7 +204,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             miniVoltorb = itemView.findViewById(R.id.mini_voltorb);
         }
 
-        public void bind(SecondFragment.infoTile tile) {
+        public void bind(Tiles.infoTile tile) {
             pointCountView.setText(String.valueOf(tile.getTotalPoints()));
 
             bombCountView.setText(String.valueOf(tile.getTotalBombs()));
@@ -215,7 +218,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 //                tileBackground.setBackgroundColor(Color.TRANSPARENT);
             }
             catch (Exception e) {
-                Log.d(SecondFragment.DEBUG_TAG, "Error: " + e.getMessage());
+                Log.d(Utilities.DEBUG_TAG, "Error: " + e.getMessage());
             }
 
         }

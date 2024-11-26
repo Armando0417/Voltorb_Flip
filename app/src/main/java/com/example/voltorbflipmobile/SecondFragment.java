@@ -16,14 +16,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.util.Pair;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -33,8 +33,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.voltorbflipmobile.databinding.FragmentSecondBinding;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -42,287 +40,6 @@ import java.util.concurrent.ExecutorService;
 
 
 public class SecondFragment extends Fragment {
-
-
-    // ================================================================
-    //                      Interface Tile
-    // ================================================================
-
-    public interface Tile {
-        int getWidth();
-        int getHeight();
-        Pair<Integer, Integer> getPosition();
-        Pair<Integer, Integer> getRowCol();
-
-
-    }
-
-    // ================================================================
-    //                      Class gameTile
-    // ================================================================
-
-    public static class gameTile implements Tile {
-        tileTypes value;
-        Pair<Integer, Integer> position;
-        Pair<Integer, Integer> row_col; // row index 0, col index 1
-        int width, height;
-        Float rotationAngle;
-        boolean flipped, isFlipping = false;
-        Bitmap frontImage, backImage;
-        public int[] horizPipeColor, vertPipeColor;
-
-        int[] animationFrames;
-
-        gameTile(tileTypes _value, Pair<Integer, Integer> _position, int _width, int _height) {
-            this.value = _value;
-            this.position = _position;
-            this.width = _width;
-            this.height = _height;
-            backImage = Utilities.IMAGE_TABLE.get(4);
-            horizPipeColor = new int[3];
-            vertPipeColor = new int[3];
-
-        }
-        void set_row_col(int _row, int _col) {
-            row_col = new Pair<>(_row, _col);
-        }
-
-    // Getters
-        public Pair<Integer, Integer> get_row_col() {
-            return row_col;
-        }
-        @Override
-        public int getWidth() {
-            return this.width;
-        }
-        @Override
-        public int getHeight() {
-            return this.height;
-        }
-        @Override
-        public Pair<Integer, Integer> getPosition() {
-            return this.position;
-        }
-        @Override
-        public Pair<Integer, Integer> getRowCol() {
-            return this.row_col;
-        }
-        Integer getNumericValue() {
-            return value.ordinal();
-        }
-        tileTypes getType() {
-            return value;
-        }
-
-        void update() {
-            if (isFlipping) {
-                rotationAngle += 10;
-                Log.d("Rotation Angle changing", String.valueOf(rotationAngle));
-                if (rotationAngle >= 180) {
-                    Log.d("Rotation Angle Finished", "");
-                    rotationAngle = 180.0F;
-                    isFlipping = false;
-                    flipped = true;
-                }
-            }
-        }
-
-        Bitmap getFrontImage() {
-            return frontImage;
-        }
-        Bitmap getBackImage() {
-            return backImage;
-        }
-
-        int[] getAnimationFrames() {
-            return animationFrames;
-        }
-
-
-        void setValueImage(tileTypes _value) {
-            value = _value;
-
-            switch (value){
-                case VOLTORB:
-                    frontImage = Utilities.IMAGE_TABLE.get(0);
-                    break;
-                case ONE:
-                    frontImage = Utilities.IMAGE_TABLE.get(1);
-                    break;
-                case TWO:
-                    frontImage = Utilities.IMAGE_TABLE.get(2);
-                    break;
-                case THREE:
-                    frontImage = Utilities.IMAGE_TABLE.get(3);
-                    break;
-                default:
-                    frontImage = Utilities.IMAGE_TABLE.get(4);
-                    break;
-            }
-
-            if (value.ordinal() > 0) {
-                animationFrames = Utilities.ANIMATION_TABLE.get("points");
-            }
-            else {
-                animationFrames = Utilities.ANIMATION_TABLE.get("explosion");
-            }
-
-        }
-        public int getHorizColor() {
-            return Color.rgb(horizPipeColor[0], horizPipeColor[1], horizPipeColor[2]);
-        }
-        public int getVertColor() {
-            return Color.rgb(vertPipeColor[0], vertPipeColor[1], vertPipeColor[2]);
-        }
-
-    }
-
-    public static class infoTile implements Tile {
-
-        private int totalPoints;
-        private int totalBombs;
-        private final int width, height;
-
-        boolean markCol;
-        Pair<Integer, Integer> position;
-        Pair<Integer, Integer> row_col; // row index 0, col index 1>
-
-        Bitmap miniVoltorb;
-
-        int[] tileColor;
-
-
-        infoTile(Pair<Integer, Integer> _position, int _width, int _height, boolean _markCol) {
-            this.position = _position;
-            this.width = _width;
-            this.height = _height;
-            this.markCol = _markCol;
-
-            miniVoltorb = Utilities.IMAGE_TABLE.get(5);
-        }
-
-        void set_row_col(int _row, int _col) {
-            row_col = new Pair<>(_row, _col);
-            setColor();
-        }
-
-        void setColor() {
-            int relevantValue;
-            if (markCol) {
-                relevantValue = row_col.second;
-            }
-            else {
-                relevantValue = row_col.first;
-            }
-
-            switch (relevantValue) {
-                case 0:
-                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.GOLD);
-                    break;
-                case 1:
-                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.ROSE);
-                    break;
-                case 2:
-                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.MINT);
-                    break;
-                case 3:
-                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.TEAL);
-                    break;
-                default:
-                    tileColor = Utilities.COLOR_TABLE.get(Utilities.ColorTypes.WISTERA);
-                    break;
-            }
-
-        }
-
-        int getTotalPoints() {
-            return totalPoints;
-        }
-
-        int getTotalBombs() {
-            return totalBombs;
-        }
-
-        void tally_points_bombs(ArrayList<ArrayList<Tile>> _board) {
-            if (_board.size() < BOARD_SIZE || _board.get(0).size() < BOARD_SIZE) {
-                throw new IllegalArgumentException("Board size is smaller than expected.");
-            }
-
-            if (markCol) {
-                int myCol = row_col.second;
-                for (int currRow = 0; currRow < BOARD_SIZE; currRow++) {
-                    try {
-                        gameTile currTile = (gameTile) _board.get(currRow).get(myCol);
-                        if (currTile.getNumericValue() > 0) {
-                            totalPoints += currTile.getNumericValue();
-                            currTile.vertPipeColor = tileColor;
-                        }
-                        else {
-                            totalBombs++;
-                        }
-                    } catch (Exception e) {
-                        Log.d("Type Mismatch", "The tile at position [" + currRow + ", " + myCol + "] is not of type gameTile");
-                    }
-                }
-            }
-
-            else {
-                int myRow = row_col.first;
-                for (int currCol = 0; currCol < BOARD_SIZE; currCol++) {
-                    try {
-
-                        gameTile currTile = (gameTile) _board.get(myRow).get(currCol);
-                        if (currTile.getNumericValue() > 0) {
-                            totalPoints += currTile.getNumericValue();
-                            currTile.horizPipeColor = tileColor;
-                        }
-                        else {
-                            totalBombs++;
-                        }
-                    }
-                    catch (Exception e) {
-                        Log.d("Type Mismatch", "The tile at position [" + myRow + ", " + currCol + "] is not of type gameTile");
-                    }
-                }
-            }
-        }
-
-        @Override
-        public int getWidth() {
-            return this.width;
-        }
-
-        @Override
-        public int getHeight() {
-            return this.height;
-        }
-
-        public colorTypes getColorType() {
-            return colorTypes.values()[row_col.first - 1];
-        }
-
-        @Override
-        public Pair<Integer, Integer> getPosition() {
-            return this.position;
-        }
-
-        @Override
-        public Pair<Integer, Integer> getRowCol() {
-            return this.row_col;
-        }
-
-        public Bitmap getMiniVoltorb() {
-            return miniVoltorb;
-        }
-
-        public int getColor() {
-            return Color.rgb(tileColor[0], tileColor[1], tileColor[2]);
-        }
-
-
-        //end of class infoTile
-    }
-
 
     public static class VerticalSpacingItemDecoration extends RecyclerView.ItemDecoration {
 
@@ -361,90 +78,6 @@ public class SecondFragment extends Fragment {
         public boolean canScrollHorizontally() {
             return false; // Disable horizontal scrolling
         }
-    }
-
-
-    // ================================================================
-    //                Continuation of Fragment Class
-    // ================================================================
-
-    public final static String  DEBUG_TAG = "Debugging Purposes";
-    public final static String  ERROR_TAG = "Error";
-
-    public final static String SUCCESS_TAG = "Success!";
-
-
-    // Region ======== Enums =========
-    public enum tileTypes {
-        VOLTORB, ONE, TWO, THREE
-    }
-
-    public enum colorTypes {
-        ROSE, MINT, TEAL, WISTERA, GOLD
-    }
-
-
-
-
-
-
-    // Region ======== Utilities ========
-    private FrameLayout animationOverlay;
-
-    private FragmentSecondBinding binding;
-    ProgressBar loadingIndicator;
-    public Game_Manager gm;
-
-    ExecutorService executorService = Utilities.createExecutorService(3);
-
-    private ArrayList<ArrayList<Tile>> finalBoard;
-    private ArrayList<Tile> flattenedBoard;
-
-    public boolean isAnimating = false;
-    private static final Integer BOARD_SIZE = 5;
-    private static final Integer TOTAL_SIZE = 6;
-
-
-    // ================================================================
-    //                     Second Fragment Methods
-    // ================================================================
-
-    @Override
-    public View onCreateView(
-            @NonNull LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState
-    ) {
-
-        binding = FragmentSecondBinding.inflate(inflater, container, false);
-        View view = binding.getRoot();
-
-        try {
-            animationOverlay = view.findViewById(R.id.animation_overlay);
-        }
-        catch (Exception e) {
-            Log.d(ERROR_TAG, "Error: " + e.getMessage());
-        }
-
-        int screenWidth = getResources().getDisplayMetrics().widthPixels;
-
-        createGrid(screenWidth);
-
-        executorService.submit(() -> {
-            gm = new Game_Manager(finalBoard, binding.getRoot().getRootView().findViewById(R.id.scoreboard));
-
-            flattenedBoard = new ArrayList<>();
-            flattenBoard();
-
-        });
-
-        MainActivity mainActivity = (MainActivity) getActivity();
-
-        if (mainActivity != null)
-            mainActivity.startMusic();
-
-
-
-        return binding.getRoot();
     }
 
 //    public class GridBoxItemDecoration extends RecyclerView.ItemDecoration {
@@ -488,6 +121,67 @@ public class SecondFragment extends Fragment {
 //
 
 
+    // ================================================================
+    //                Continuation of Fragment Class
+    // ================================================================
+
+    // Region ======== Utilities ========
+
+    private FrameLayout animationOverlay;
+
+    private FragmentSecondBinding binding;
+
+    ExecutorService backgroundExecutor = Utilities.createExecutorService(3);
+
+    public boolean isAnimating = false;
+
+    public Game_Manager gm;
+
+    private static final int[] verticalIDs = {
+            R.id.vertical_connector_0,
+            R.id.vertical_connector_1,
+            R.id.vertical_connector_2,
+            R.id.vertical_connector_3,
+            R.id.vertical_connector_4,
+    };
+    private static final int[] horizontalIDs = {
+            R.id.horizontal_connector_0,
+            R.id.horizontal_connector_1,
+            R.id.horizontal_connector_2,
+            R.id.horizontal_connector_3,
+            R.id.horizontal_connector_4
+    };
+
+    // ================================================================
+    //                     Second Fragment Methods
+    // ================================================================
+
+    @Override
+    public View onCreateView(
+            @NonNull LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState
+    ) {
+
+        binding = FragmentSecondBinding.inflate(inflater, container, false);
+        View view = binding.getRoot();
+
+
+        Utilities.tryCatch(() -> {
+            animationOverlay = view.findViewById(R.id.animation_overlay);
+        }, Handlers.GENERAL_EXCEPTION);
+
+        gm = new Game_Manager(binding.getRoot().getRootView().findViewById(R.id.scoreboard), getResources().getDisplayMetrics().widthPixels);
+
+        MainActivity mainActivity = (MainActivity) getActivity();
+
+        if (mainActivity != null)
+            mainActivity.startMusic();
+
+
+        return binding.getRoot();
+    }
+
+
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -503,10 +197,12 @@ public class SecondFragment extends Fragment {
 //        int dividerThickness = 2; // Adjust thickness (in pixels) as needed
 //        recyclerView.addItemDecoration(new GridBoxItemDecoration(dividerColor, dividerThickness));
 
-        // Make sure gameBoard is not null and has items
-        if (finalBoard != null && !finalBoard.isEmpty()) {
-            TileAdapter adapter = new TileAdapter(finalBoard, this);
+        // Make sure tiles is not null and has items
+        if (gm.getGameBoard().getBoardAsList() != null && !gm.getGameBoard().getBoardAsList().isEmpty()) {
+
+            TileAdapter adapter = new TileAdapter(gm.getGameBoard().getBoardAsList(), this);
             recyclerView.setAdapter(adapter);
+
         }
 
         else {
@@ -521,8 +217,6 @@ public class SecondFragment extends Fragment {
 
                 int gridWidth = recyclerView.getWidth();
                 int gridHeight = recyclerView.getHeight();
-                int tileWidth = gridWidth / 6;
-                int tileHeight = gridHeight / 6;
 
                 Log.d("Grid width and height are: ", gridWidth + " " + gridHeight);
 
@@ -544,7 +238,7 @@ public class SecondFragment extends Fragment {
 
                     GradientDrawable vertOuterRect = new GradientDrawable();
                         vertOuterRect.setShape(GradientDrawable.RECTANGLE);
-                        vertOuterRect.setColor(ContextCompat.getColor(getContext(), R.color.white));
+                        vertOuterRect.setColor(ContextCompat.getColor(requireContext(), R.color.white));
                         vertOuterRect.setSize(0, 0);
 
 
@@ -593,11 +287,11 @@ public class SecondFragment extends Fragment {
                         int vertDist = Math.abs( locationBot[1] - (locationTop[1] + topTile.getHeight()) - 10);
 
                     // Fetching both Tile Colors
-                        infoTile currHorizTile = null;
-                        infoTile currVertTile = null;
+                        Tiles.infoTile currHorizTile = null;
+                        Tiles.infoTile currVertTile = null;
                         if (startTileBot != 35) {
-                            currVertTile = (infoTile) flattenedBoard.get(startTileBot);
-                            currHorizTile = (infoTile) flattenedBoard.get(startTileRight);
+                            currVertTile = (Tiles.infoTile) gm.getGameBoard().getFlattenedBoard().get(startTileBot);
+                            currHorizTile = (Tiles.infoTile) gm.getGameBoard().getFlattenedBoard().get(startTileRight);
                         }
 
                         int currRowColor = (currHorizTile != null) ? currHorizTile.getColor() : Color.YELLOW;
@@ -630,12 +324,14 @@ public class SecondFragment extends Fragment {
 
                 // Horizontal Thread
                     int finalI = i;
-                    executorService.submit(() -> {
+                    backgroundExecutor.submit(() -> {
                         innerHorizRect.setColor(currRowColor);
                         InsetDrawable horizontalInset = new InsetDrawable(innerHorizRect, horizLeftActualOffset, horizTopActualOffset, horizRightActualOffset, horizBottomActualOffset);
                         LayerDrawable horizontalLayers = new LayerDrawable(new Drawable[]{horizOuterRect, horizontalInset});
 
-                        View horizontalConnector = view.findViewById(getResources().getIdentifier("horizontal_connector_" + finalI, "id", requireContext().getPackageName()));
+//                        View horizontalConnector = view.findViewById(getResources().getIdentifier("horizontal_connector_" + finalI, "id", requireContext().getPackageName()));
+                            View horizontalConnector = view.findViewById(horizontalIDs[finalI]);
+
 
                         if (horizontalConnector != null) {
                             requireActivity().runOnUiThread(() -> {
@@ -651,12 +347,14 @@ public class SecondFragment extends Fragment {
 
                 // Vertical Thread
                     int finalI1 = i;
-                    executorService.submit(() -> {
+                    backgroundExecutor.submit(() -> {
                         innerVertRect.setColor(currColColor);
                         InsetDrawable verticalInset = new InsetDrawable(innerVertRect, vertLeftActualOffset, vertTopActualOffset, vertRightActualOffset, vertBottomActualOffset);
                         LayerDrawable verticalLayers = new LayerDrawable(new Drawable[]{vertOuterRect, verticalInset});
 
-                        View verticalConnector = view.findViewById(getResources().getIdentifier("vertical_connector_" + finalI1, "id", requireContext().getPackageName()));
+//                        View verticalConnector = view.findViewById(getResources().getIdentifier("vertical_connector_" + finalI1, "id", requireContext().getPackageName()));
+
+                        View verticalConnector = view.findViewById(verticalIDs[finalI1]);
 
                         if (verticalConnector != null) {
                             requireActivity().runOnUiThread(() -> {
@@ -680,12 +378,6 @@ public class SecondFragment extends Fragment {
                     throw new RuntimeException(e);
                 }
                 finally {
-                    try {
-                        loadingIndicator.setVisibility(View.GONE);
-                    }
-                    catch (Exception e) {
-                        Log.d(ERROR_TAG, "Error: " + e.getMessage());
-                    }
                     View grid = binding.getRoot().getRootView().findViewById(R.id.game_grid);
                     grid.setVisibility(View.VISIBLE);
 
@@ -693,21 +385,18 @@ public class SecondFragment extends Fragment {
                     grid.animate().alpha(1f).setDuration(10).start();
 
                     recyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    Log.d(DEBUG_TAG, "Layout Complete");
+                    Log.d(Utilities.SUCCESS_TAG, "Layout Complete");
                 }
             }
         });
     }
 
-
-
     // ================================================================
     // Region              Auxiliary Methods
     // ================================================================
 
-
     @NonNull
-    private static FrameLayout.LayoutParams getLayoutParams(View tileView, gameTile currentTile, int frameIndex) {
+    private static FrameLayout.LayoutParams getLayoutParams(View tileView, Tiles.gameTile currentTile, int frameIndex) {
         int width;
         int height;
 
@@ -723,7 +412,7 @@ public class SecondFragment extends Fragment {
         return new FrameLayout.LayoutParams (width, height);
     }
 
-    public void playOverlayAnimation(int[] animationFrames, View tileView, gameTile currentTile) {
+    public void playOverlayAnimation(int[] animationFrames, View tileView, Tiles.gameTile currentTile) {
             if (isAnimating) {
                 Utilities.logError("Animation currently being played, actions are disabled");
                 return;
@@ -794,19 +483,19 @@ public class SecondFragment extends Fragment {
                     public void onAnimationEnd(Animator animation) {
                         animationOverlay.removeView(animationView);
 
-                        gm.updateBoard(currentTile);
+                        gm.getGameBoard().updateBoard(currentTile.getRowCol().first, currentTile.getRowCol().second);
 
-                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                            if (Game_Manager.verifyLoss(currentTile)) {
-                                Log.d(DEBUG_TAG, "Lose Works!");
-                                triggerLoseAnimation();
-
-                            }
-                            if (gm.verifyWin()) {
-                                Log.d(DEBUG_TAG, "Win Works!");
-                                Utilities.playSound(Utilities.SoundEffects.LEVEL_COMPLETE_SFX);
-                            }
-                        }, 500);
+//                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+////                            if (Game_Manager.verifyLoss(currentTile)) {
+////                                Log.d(Utilities.DEBUG_TAG, "Lose Works!");
+////                                triggerLoseAnimation();
+////
+////                            }
+////                            if (gm.verifyWin()) {
+////                                Log.d(Utilities.DEBUG_TAG, "Win Works!");
+////                                Utilities.playSound(Utilities.SoundEffects.LEVEL_COMPLETE_SFX);
+////                            }
+//                        }, 500);
 
                     }
                 });
@@ -816,7 +505,6 @@ public class SecondFragment extends Fragment {
     public void triggerLoseAnimation() {
         RecyclerView recView = binding.recyclerView;
 
-        final int TOTAL_ROWS = 6;        // Total rows in the overall grid
         final int TOTAL_COLUMNS = 6;    // Total columns in the overall grid
         final int FLIP_ROWS = 5;        // Rows to flip
         final int FLIP_COLUMNS = 5;     // Columns to flip
@@ -836,80 +524,84 @@ public class SecondFragment extends Fragment {
                     if (viewHolder instanceof TileAdapter.GameTileHolder) {
                         TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
 
-
                         tileHolder.flipDown();
                         Game_Manager.isWinningState = false;
                     }
                 }
+                Utilities.delayedHandler(() -> {
+
+
+                }, 200);
+
             }, col * 500);
         }
     }
 
 
 
-    private void createGrid(int screenWidth) {
-        int tileDimensions = screenWidth / 10;
+//    private void createGrid(int screenWidth) {
+//        int tileDimensions = screenWidth / 10;
+//
+//        finalBoard = new ArrayList<>(TOTAL_SIZE);
+//        for (int i = 0; i < TOTAL_SIZE; i++) {
+//            finalBoard.add(new ArrayList<>(TOTAL_SIZE));
+//        }
+//
+//        ArrayList<ArrayList<Integer>> testBoard = Game_Manager.generateNewBoard();
+//
+//        // Create the grid
+//        for (int row = 0; row < TOTAL_SIZE; row++) {
+//            for (int col = 0; col < TOTAL_SIZE; col++) {
+//
+//                if (row == BOARD_SIZE && col == BOARD_SIZE) {
+//                    continue;
+//                }
+//
+//                if (row == BOARD_SIZE) {
+//                    finalBoard.get(row).add(col,
+//                            new infoTile(
+//                                    new Pair<>(row, col),               // row, col
+//                                    tileDimensions, tileDimensions,     // width, height
+//                                    true                               // mark the column
+//                            ));
+//                    ((infoTile) finalBoard.get(row).get(col)).set_row_col(row, col);
+//                }
+//                else if (col == BOARD_SIZE) {
+//                    finalBoard.get(row).add(col,
+//                            new infoTile(
+//                                    new Pair<>(row, col),               // row, col
+//                                    tileDimensions, tileDimensions,     // width, height
+//                                    false                                // mark the column
+//                            ));
+//                    ((infoTile) finalBoard.get(row).get(col)).set_row_col(row, col);
+//                }
+//                else {
+//                    finalBoard.get(row).add(col,
+//                            new gameTile(
+//                                    tileTypes.values()[testBoard.get(row).get(col)], // Tile type
+//                                    new Pair<>(row, col),                            // row & col
+//                                    tileDimensions, tileDimensions                   // width & height
+//                            ));
+//
+//                    gameTile currTile = (gameTile) finalBoard.get(row).get(col);
+//                    currTile.setValueImage(tileTypes.values()[testBoard.get(row).get(col)]);
+//                }
+//            }
+//        }
+//            populateInfoTiles();
+//            Log.d(DEBUG_TAG, "Finished Create grid with a size of " + finalBoard.size() + "x" + finalBoard.get(0).size());
+//        }
 
-        finalBoard = new ArrayList<>(TOTAL_SIZE);
-        for (int i = 0; i < TOTAL_SIZE; i++) {
-            finalBoard.add(new ArrayList<>(TOTAL_SIZE));
-        }
 
-        ArrayList<ArrayList<Integer>> testBoard = Game_Manager.generateNewBoard();
-
-        // Create the grid
-        for (int row = 0; row < TOTAL_SIZE; row++) {
-            for (int col = 0; col < TOTAL_SIZE; col++) {
-
-                if (row == BOARD_SIZE && col == BOARD_SIZE) {
-                    continue;
-                }
-
-                if (row == BOARD_SIZE) {
-                    finalBoard.get(row).add(col,
-                            new infoTile(
-                                    new Pair<>(row, col),               // row, col
-                                    tileDimensions, tileDimensions,     // width, height
-                                    true                               // mark the column
-                            ));
-                    ((infoTile) finalBoard.get(row).get(col)).set_row_col(row, col);
-                }
-                else if (col == BOARD_SIZE) {
-                    finalBoard.get(row).add(col,
-                            new infoTile(
-                                    new Pair<>(row, col),               // row, col
-                                    tileDimensions, tileDimensions,     // width, height
-                                    false                                // mark the column
-                            ));
-                    ((infoTile) finalBoard.get(row).get(col)).set_row_col(row, col);
-                }
-                else {
-                    finalBoard.get(row).add(col,
-                            new gameTile(
-                                    tileTypes.values()[testBoard.get(row).get(col)], // Tile type
-                                    new Pair<>(row, col),                            // row & col
-                                    tileDimensions, tileDimensions                   // width & height
-                            ));
-
-                    gameTile currTile = (gameTile) finalBoard.get(row).get(col);
-                    currTile.setValueImage(tileTypes.values()[testBoard.get(row).get(col)]);
-                }
-            }
-        }
-            populateInfoTiles();
-            Log.d(DEBUG_TAG, "Finished Create grid with a size of " + finalBoard.size() + "x" + finalBoard.get(0).size());
-        }
-
-
-        private void flattenBoard() {
-            for (ArrayList<Tile> row : finalBoard) {
-                for (Tile curr : row) {
-                    if (curr != null) {
-                        flattenedBoard.add(curr);
-                    }
-                }
-            }
-        }
+//        private void flattenBoard() {
+//            for (ArrayList<Tile> row : finalBoard) {
+//                for (Tile curr : row) {
+//                    if (curr != null) {
+//                        flattenedBoard.add(curr);
+//                    }
+//                }
+//            }
+//        }
 
 
 //        private ArrayList<ArrayList<Integer>> testBoardGenerator() {
@@ -940,18 +632,18 @@ public class SecondFragment extends Fragment {
 //        }
 
 
-        private void populateInfoTiles() {
-            for (int row = 0; row < TOTAL_SIZE; row++) {
-                for (int col = 0; col < TOTAL_SIZE; col++) {
-                    if (row == BOARD_SIZE && col == BOARD_SIZE) {
-                        continue;
-                    }
-                    if (finalBoard.get(row).get(col) instanceof infoTile) {
-                        ((infoTile) finalBoard.get(row).get(col)).tally_points_bombs(finalBoard);
-                    }
-                }
-            }
-        }
+//        private void populateInfoTiles() {
+//            for (int row = 0; row < TOTAL_SIZE; row++) {
+//                for (int col = 0; col < TOTAL_SIZE; col++) {
+//                    if (row == BOARD_SIZE && col == BOARD_SIZE) {
+//                        continue;
+//                    }
+//                    if (finalBoard.get(row).get(col) instanceof infoTile) {
+//                        ((infoTile) finalBoard.get(row).get(col)).tally_points_bombs(finalBoard);
+//                    }
+//                }
+//            }
+//        }
 
 
     @Override
