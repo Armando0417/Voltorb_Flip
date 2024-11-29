@@ -19,7 +19,7 @@ import com.example.voltorbflipmobile.databinding.ActivityMainBinding;
 import android.view.Menu;
 import android.view.MenuItem;
 
-
+import java.util.Objects;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -41,6 +41,19 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+
+
+//
+//        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+//        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+//            if (destination.getId() == R.id) {
+//                Objects.requireNonNull(getSupportActionBar()).setTitle("Level " + currentLevel);
+//            } else {
+//                getSupportActionBar().setTitle(destination.getLabel());
+//            }
+//        });
+
+
 
 //        binding.fab.setOnClickListener(new View.OnClickListener() {
 //            @Override

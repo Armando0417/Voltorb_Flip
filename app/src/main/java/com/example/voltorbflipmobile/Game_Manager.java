@@ -159,6 +159,7 @@ public class Game_Manager {
 
 
         private void generateNewGrid() {
+
             ArrayList<ArrayList<Integer>> initialGridValues = new ArrayList<>();
 
             for (int rowIndex = 0; rowIndex < BOARD_SIZE; rowIndex++) {

@@ -45,7 +45,6 @@ public class FirstFragment extends Fragment {
     ) {
         binding = FragmentFirstBinding.inflate(inflater, container, false);
 
-
         loadFiles();
         prepareViews();
 
@@ -225,7 +224,8 @@ public class FirstFragment extends Fragment {
         binding.startButton.setOnClickListener(v -> {
                 handler.removeCallbacksAndMessages(null);
                     Utilities.playSound(Utilities.SoundEffects.STORING_POINTS_SFX);
-                NavHostFragment.findNavController(FirstFragment.this)
+
+            NavHostFragment.findNavController(FirstFragment.this)
                         .navigate(R.id.action_FirstFragment_to_SecondFragment);
                 }
         );

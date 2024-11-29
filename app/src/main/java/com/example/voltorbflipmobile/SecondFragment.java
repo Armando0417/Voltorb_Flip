@@ -32,6 +32,10 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -122,6 +126,17 @@ public class SecondFragment extends Fragment {
     }
 
 
+    public static class SharedViewModel extends ViewModel {
+        private final MutableLiveData<Integer> levelNumber = new MutableLiveData<>(0);
+
+        public LiveData<Integer> getLevelNumber() {
+            return levelNumber;
+        }
+
+        public void setLevelNumber(int level) {
+            levelNumber.setValue(level);
+        }
+    }
 
 
     // ================================================================
@@ -191,6 +206,13 @@ public class SecondFragment extends Fragment {
             mainActivity.startMusic();
 
 
+        Utilities.tryCatch( () -> {
+            SharedViewModel model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+            model.setLevelNumber(1);
+        }, Handlers.GENERAL_EXCEPTION);
+
+
+
         return binding.getRoot();
     }
 
@@ -206,6 +228,16 @@ public class SecondFragment extends Fragment {
 
         recyclerView.addItemDecoration(new VerticalSpacingItemDecoration(30, 6));
 
+        SharedViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+
+        viewModel.getLevelNumber().observe(getViewLifecycleOwner(), levelNum -> {
+            if (getActivity() != null) {
+                Objects.requireNonNull(((MainActivity) getActivity()).getSupportActionBar()).setTitle("Level " + levelNum);
+            }
+        });
+
+
 //        int dividerColor = Color.LTGRAY; // Choose a color for your dividers
 //        int dividerThickness = 2; // Adjust thickness (in pixels) as needed
 //        recyclerView.addItemDecoration(new GridBoxItemDecoration(dividerColor, dividerThickness));
@@ -219,8 +251,6 @@ public class SecondFragment extends Fragment {
         else {
             Log.e("SecondFragment", "Game board is empty or null.");
         }
-
-
 
 
         // Position connectors after RecyclerView layout is complete
@@ -489,7 +519,9 @@ public class SecondFragment extends Fragment {
                         stateChanger.setVisibility(View.VISIBLE);
                         stateChanger.setBackgroundColor(Color.argb(126, 210, 0, 0) );
                         loseText[0].setVisibility(View.VISIBLE);
+                        loseText[0].setText(R.string.you_lose_text);
                         loseText[1].setVisibility(View.VISIBLE);
+                        loseText[1].setText(R.string.you_lose_text);
 
                         stateChanger.setOnClickListener( v -> {
                             stateChanger.setVisibility(View.GONE);
@@ -516,6 +548,37 @@ public class SecondFragment extends Fragment {
                              if (gm.verifyWin()) {
                                 Utilities.logDebug("Win condition has been met, Triggering win animation.");
                                 Utilities.playSound(Utilities.SoundEffects.LEVEL_COMPLETE_SFX);
+
+                                 Game_Manager.isInteractionAllowed = false;
+
+                                 Utilities.delayedHandler( () -> {
+                                     stateChanger.setVisibility(View.VISIBLE);
+                                     stateChanger.setBackgroundColor(Color.argb(126, 0, 210, 0) );
+                                     loseText[0].setVisibility(View.VISIBLE);
+                                     loseText[0].setText(R.string.you_win);
+                                     loseText[1].setVisibility(View.VISIBLE);
+                                     loseText[1].setText(R.string.you_win);
+
+                                     stateChanger.setOnClickListener( v -> {
+                                         stateChanger.setVisibility(View.GONE);
+                                         triggerLoseAnimation();
+                                         try {
+                                             SharedViewModel model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+                                             Integer currLevel = model.getLevelNumber().getValue();
+
+                                             if (currLevel != null)
+                                                model.setLevelNumber( currLevel + 1);
+
+                                         }
+                                         catch (Exception e) {
+                                             Utilities.logError("Failure to update level number");
+                                         }
+
+                                     });
+
+                                 }, 1000);
+
+
                                 //TODO ADD A DISPLAY BUTTON TO MOVE TO A NEW LEVEL (SCORE GETS STORED AND GENERATE NEW BOARD)
                             }
                         }, Utilities.ANIMATION_DELAY);
