@@ -60,6 +60,9 @@ public class Utilities {
     public static final String ERROR_TAG = "Error";
     public static final String SUCCESS_TAG = "Success!";
 
+    public static final long ANIMATION_DELAY = 200L;
+    public static final long ANIMATION_DURATION = 500L;
+
     // ================================================================
     //                        Enums
     // ================================================================

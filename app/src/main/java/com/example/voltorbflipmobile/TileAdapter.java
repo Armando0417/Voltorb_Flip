@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.view.autofill.AutofillId;
 import android.widget.ImageView;
 
 import android.widget.TextView;
@@ -93,12 +94,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public static class GameTileHolder extends RecyclerView.ViewHolder {
         private final ImageView frontImage;
         private final ImageView backImage;
-
-
-        private boolean isFlipped = false;
-        private boolean isAnimating = false;
-
-
+        public boolean isFlippedUp = false;
+        public boolean isFlippedDown = true;
 
         public GameTileHolder(@NonNull View itemView) {
             super(itemView);
@@ -112,46 +109,28 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
 
+            if (Game_Manager.isInteractionAllowed) {
+
             backImage.setOnClickListener(v -> {
-                if (Game_Manager.isLosingState)
-                    Log.d(Utilities.DEBUG_TAG, "Lose animation in progress. No action allowed.");
+                Game_Manager.isInteractionAllowed = false;
+                flipUp();
 
-                else if (Game_Manager.isWinningState)
-                    Log.d(Utilities.DEBUG_TAG, "Win animation in progress. No action allowed.");
-
-                else if (Game_Manager.isTimerRunning())
-                    Log.d(Utilities.DEBUG_TAG, "Tile Clicked and Animation Not Started");
-
-
-                else {
-                    Log.d(Utilities.DEBUG_TAG, "Tile Clicked and Animation Started");
-                    isAnimating = true;
-
-                    Game_Manager.startCountdownTimer();
-
-                    flipUp();
-
-                    if (!Game_Manager.isLosingState) {
-                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                            try {
-                                if (tile == null) {
-                                    Utilities.logDebug("Tile is null here!");
-                                }
-                                currFragment.playOverlayAnimation(animationFrames, itemView, tile);
-                            }
-                            catch (Exception e) {
-                                Log.d(Utilities.ERROR_TAG, "Error: " + e.getMessage());
-                            }
-                            finally {
-                                Log.d(Utilities.DEBUG_TAG, "Animation Ended");
-                                currFragment.isAnimating = false;
-                                isAnimating = false;
-                            }
-                        }, 200);
+                Utilities.delayedHandler( () -> {
+                    try {
+                        currFragment.playOverlayAnimation(animationFrames, itemView, tile);
                     }
-                }
+                    catch (Exception e) {
+                        Utilities.logError("Error in overlay animation: " + e);
+                    }
+                    finally {
+                        Utilities.logDebug("Animation Ended. Re-enabling interactions.");
+                    }
+                }, Utilities.ANIMATION_DURATION);
+
             });
+            }
         }
+
 
 
         public void flipUp() {
@@ -160,24 +139,24 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 frontImage.setVisibility(View.VISIBLE);
                 frontImage.setRotation(0);
                 frontImage.animate().rotationY(0).setDuration(150).withEndAction(() -> {
-                    isFlipped = true;
                 });
             }).start();
+            isFlippedUp = true;
+            isFlippedDown = false;
             Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
         }
 
         public void flipDown() {
-            backImage.animate().rotationY(180).setDuration(200).withEndAction(() -> {
-                backImage.setVisibility(View.VISIBLE);
+            frontImage.animate().rotationY(180).setDuration(200).withEndAction(() -> {
                 frontImage.setVisibility(View.GONE);
-                frontImage.setRotation(0);
-                frontImage.animate().rotationY(0).setDuration(150).withEndAction(() -> {
-                    isFlipped = true;
-                });
+                backImage.setVisibility(View.VISIBLE);
+                backImage.setRotation(0);
+
             }).start();
+            isFlippedUp = false;
+            isFlippedDown = true;
             Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
         }
-
 
     }
 

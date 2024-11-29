@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -18,6 +19,14 @@ import com.example.voltorbflipmobile.Tiles.*;
 
 public class Game_Manager {
     public static final int BOARD_SIZE = 6;
+
+
+
+
+    //Region DEBUG BOARD:
+    boolean useDebugBoard = false;
+
+
     // ================================================================
     //                     Board State Class
     // ================================================================
@@ -28,6 +37,7 @@ public class Game_Manager {
         public static final int MAX_TILE_VALUE = 4;
 
         ArrayList<ArrayList<Tile>> tiles;
+
         ArrayList<Tiles.Tile> flattenedBoard;
 
         HashMap<Utilities.TileTypes, Integer> tileFrequencies;
@@ -41,8 +51,10 @@ public class Game_Manager {
             flattenedBoard = new ArrayList<>();
             tiles = new ArrayList<>();
 
+            boardLost = false;
+            boardCompleted = false;
+
             generateNewGrid();
-            populateInfoTiles();
             countBoard();
             flattenBoard();
         }
@@ -63,7 +75,6 @@ public class Game_Manager {
         public ArrayList<ArrayList<Tile>> getBoardAsList() {
             return tiles;
         }
-
 
 
         private void createGameBoard(ArrayList<ArrayList<Integer>> initialGridValues) {
@@ -139,9 +150,10 @@ public class Game_Manager {
                     if (tile instanceof Tiles.gameTile) {
                         Tiles.gameTile currTile = (Tiles.gameTile) tile;
                         tileFrequencies.merge(currTile.getType(), 1, Integer::sum);
-//                        tileFrequencies.compute(currTile.getType(), (k, v) -> v == null ? 1 : v + 1);
+
                     }
                 }
+
             }
         }
 
@@ -170,8 +182,37 @@ public class Game_Manager {
 
             initialGridValues = verifyGrid(initialGridValues);
             Log.d(Utilities.DEBUG_TAG, initialGridValues.toString());
-            createGameBoard(initialGridValues);
 
+            if (useDebugBoard) {
+                createGameBoard(testBoardGenerator());
+            }
+            else {
+                createGameBoard(initialGridValues);
+            }
+
+        }
+
+        private ArrayList<ArrayList<Integer>> testBoardGenerator() {
+
+        /*
+            Test Board Layout:
+                0 3 1 3 2 0
+                0 0 0 0 2 0
+                0 2 1 3 0 0
+                0 0 1 3 0 0
+                1 2 3 2 1 0
+                0 0 0 0 0 _
+         */
+
+            ArrayList<ArrayList<Integer>> testBoard = new ArrayList<>();
+            testBoard.add(new ArrayList<>(Arrays.asList(0, 3, 1, 3, 2, 0)));
+            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 0, 0, 2, 0)));
+            testBoard.add(new ArrayList<>(Arrays.asList(0, 2, 1, 3, 0, 0)));
+            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 1, 3, 0, 0)));
+            testBoard.add(new ArrayList<>(Arrays.asList(1, 2, 3, 2, 1, 0)));
+            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 0, 0, 0, 0)));
+
+            return testBoard;
         }
 
 
@@ -181,19 +222,22 @@ public class Game_Manager {
             if (currTile.getNumericValue() > 0
                     && Objects.requireNonNull( tileFrequencies.get(currTile.getType()) )  > 0) {
 
-//                tileFrequencies.compute(currTile.getType(), (k, v) -> v == null ? -1 : v - 1);
-                tileFrequencies.merge(currTile.getType(), 1, Integer::sum);
+
+                tileFrequencies.merge(currTile.getType(), 1, (key, decrease) -> key - decrease);
 
                 if (Objects.requireNonNull( tileFrequencies.get(currTile.getType()) ) == -1 )
                     Utilities.logError("Tile Counter for " + currTile.getType().toString() + " is -1! ");
 
                 updateScore (currTile.getNumericValue() );
+                Utilities.delayedHandler( () -> {
+                    boardCompleted = verifyWin();
+                }, 200);
             }
 
             else {
                 Utilities.delayedHandler(
                         () -> boardLost = true
-                , 500);
+                , 100);
             }
 
         }
@@ -270,12 +314,11 @@ public class Game_Manager {
 
 
     static Board gameBoard;
-    HashMap<Utilities.TileTypes, Integer> tileCounter;
 
     static HashMap<Integer, TextView> scoreMap;
     static String scoreText;
     static int currScore;
-    public View game_boardView;
+    public View score_boardView;
     public final int screenWidth;
 
     private static CountDownTimer countDownTimer;
@@ -283,156 +326,69 @@ public class Game_Manager {
     public static boolean isLosingState = false;
     public static boolean isWinningState = false;
 
-    public static void startCountdownTimer() {
-        countDownTimer = new CountDownTimer(350, 1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                Log.d(Utilities.DEBUG_TAG, "Timer Ticked");
-            }
+    public static boolean isInteractionAllowed = true;
 
-            @Override
-            public void onFinish() {
-                isTimerRunning = false;
-            }
-        };
-        isTimerRunning = true;
-        countDownTimer.start();
-    }
-
-    private void cancelCountdownTimer() {
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-            countDownTimer = null;
-        }
-    }
-
-    public static boolean isTimerRunning() {
-        return isTimerRunning;
-    }
-
-    public Game_Manager(View _gboard, int _screenWidth) {
-        this.game_boardView = _gboard;
+    public Game_Manager(View _score_board, int _screenWidth) {
+        this.score_boardView = _score_board;
         scoreMap = new HashMap<>();
         scoreText = "";
         currScore = 0;
         this.screenWidth = _screenWidth;
         gameBoard = new Board();
         loadScoreViews();
-
     }
 
     public void resetBoard() {
         scoreText = "";
         currScore = 0;
         gameBoard = new Board();
+        printCurrentBoard();
+        isInteractionAllowed = true;
+        scoreMap.forEach( (key, value) -> {
+            value.setText("0");
+        });
+
+
     }
 
     public Board getGameBoard() {
         return gameBoard;
     }
 
+    public static void printCurrentBoard() {
+        for (ArrayList<Tiles.Tile> row : gameBoard.tiles) {
+            StringBuilder currRow = new StringBuilder();
 
-//    public static ArrayList<ArrayList<Integer>> generateNewBoard() {
-//
-//        ArrayList<ArrayList<Integer>> newBoard = new ArrayList<>();
-//
-//        final int BOARD_SIZE = 6;
-//
-//        for (int row = 0; row < BOARD_SIZE; row++) {
-//            ArrayList<Integer> newRow = new ArrayList<>();
-//
-//            for (int col = 0; col < BOARD_SIZE; col++) {
-//                if (row == 5 && col == 5)
-//                    continue;
-//
-//                Random RandomNumGenerator = new Random();
-//
-//                int randomVal = RandomNumGenerator.nextInt(4);
-//
-//                newRow.add(randomVal);
-//
-//                if (row == 5 || col == 5)
-//                    newRow.set(col, 0);
-//            }
-//            newBoard.add(newRow);
-//        }
-//
-//        return new ArrayList<>(verifyBoard(newBoard));
-//
-//    }
-//
-//    private static ArrayList<ArrayList<Integer>> verifyBoard(ArrayList<ArrayList<Integer>> newBoard) {
-//        ArrayList<ArrayList<Integer>> fixedBoard = new ArrayList<>();
-//
-//        HashMap<Integer, Integer> freqBoard = new HashMap<>();
-//        Queue<Integer> rowsToCheck = new LinkedList<>();
-//
-//        final int GridSize = 5;
-//
-//        for (int row = 0; row < GridSize; row++) {
-//            HashMap<Integer, Integer> freqRow = new HashMap<>();
-//
-//            for (int col = 0; col < GridSize; col++) {
-//                if (freqRow.get(newBoard.get(row).get(col)) != null) {
-//                    freqRow.compute(newBoard.get(row).get(col), (k, v) -> v == null ? 1 : v + 1);
-//                }
-//                if (freqBoard.get(newBoard.get(row).get(col)) != null) {
-//                    freqBoard.compute(newBoard.get(row).get(col), (k, v) -> v == null ? 1 : v + 1);
-//                }
-//                freqRow.putIfAbsent(newBoard.get(row).get(col), 1);
-//                freqBoard.putIfAbsent(newBoard.get(row).get(col), 1);
-//
-//
-//
-//            }
-//            if (freqRow.getOrDefault(0, 0) > 4 ||
-//                    freqRow.getOrDefault(1, 0) > 4 ||
-//                    freqRow.getOrDefault(2, 0) > 4 ||
-//                    freqRow.getOrDefault(3, 0) > 4) {
-//                rowsToCheck.add(row);
-//            }
-//
-//
-//        }
-//        fixedBoard = regenerateBoard(newBoard, rowsToCheck);
-//
-//        return fixedBoard;
-//    }
-//
-//    private static ArrayList<ArrayList<Integer>> regenerateBoard(ArrayList<ArrayList<Integer>> newBoard, Queue<Integer> rowsToCheck) {
-//        ArrayList<ArrayList<Integer>> fixedBoard = new ArrayList<>();
-//        if (rowsToCheck.isEmpty()) {
-//            fixedBoard = newBoard;
-//            return fixedBoard;
-//        }
-//        while (!rowsToCheck.isEmpty()) {
-//            int currRow = Objects.requireNonNull(rowsToCheck.poll());
-//
-//            for (int cell = 0; cell < 6; cell++) {
-//                if (cell == 5) {
-//                    fixedBoard.get(currRow).set(cell, 0);
-//                }
-//                else {
-//                    Random RandomNumGenerator = new Random();
-//                    int randomVal = RandomNumGenerator.nextInt(4);
-//                    fixedBoard.get(currRow).set(cell, randomVal);
-//                }
-//            }
-//        }
-//        return fixedBoard;
-//    }
+            currRow.append(" [");
 
-    public void loadScoreViews() {
-        try {
-            scoreMap.put(0, game_boardView.findViewById(R.id.score10k));
-            scoreMap.put(1, game_boardView.findViewById(R.id.score1k));
-            scoreMap.put(2, game_boardView.findViewById(R.id.score100));
-            scoreMap.put(3, game_boardView.findViewById(R.id.score10s));
-            scoreMap.put(4, game_boardView.findViewById(R.id.score1s));
+            for (Tiles.Tile cell : row) {
+                if (cell instanceof Tiles.gameTile) {
+                    Tiles.gameTile currTile = (Tiles.gameTile) cell;
+                    currRow.append(currTile.getNumericValue());
+                }
+                else {
+                    currRow.append("X");
+                }
+                currRow.append(", ");
+            }
+            currRow.delete(currRow.length() - 2, currRow.length());
+            currRow.append("]");
+
+            Log.d(Utilities.DEBUG_TAG, currRow.toString());
         }
-        catch (Exception e) {
-            Log.d(Utilities.ERROR_TAG, "Loaded wrong");
-        }
+    }
+
+
+public void loadScoreViews() {
+
+        Utilities.tryCatch( () -> {
+            scoreMap.put(0, score_boardView.findViewById(R.id.score10k));
+            scoreMap.put(1, score_boardView.findViewById(R.id.score1k));
+            scoreMap.put(2, score_boardView.findViewById(R.id.score100));
+            scoreMap.put(3, score_boardView.findViewById(R.id.score10s));
+            scoreMap.put(4, score_boardView.findViewById(R.id.score1s));
+        },
+            Handlers.GENERAL_EXCEPTION);
 
     }
 
@@ -458,48 +414,6 @@ public class Game_Manager {
     }
 
 
-//    public void countBoard() {
-//        for (ArrayList<SecondFragment.Tile> row : board) {
-//            for (SecondFragment.Tile tile : row) {
-//                if (tile instanceof SecondFragment.gameTile) {
-//                    SecondFragment.gameTile currTile = (SecondFragment.gameTile) tile;
-//
-//                    tileCounter.compute(currTile.getType(), (k, v) -> v == null ? 1 : v + 1);
-//                }
-//            }
-//        }
-//    }
-
-//    public void updateBoard(SecondFragment.gameTile currTile) {
-//        if (currTile == null) {
-//            Log.d(SecondFragment.ERROR_TAG, "Tile couldn't be updated since it doesn't exist");
-//            return;
-//        }
-//
-//        if (currTile.getNumericValue() > 0
-//                && Objects.requireNonNull( tileCounter.get(currTile.getType()) )  > 0)
-//        {
-//            tileCounter.compute(currTile.getType(), (k, v) -> v == null ? -1 : v - 1);
-//
-//            if (Objects.requireNonNull( tileCounter.get(currTile.getType()) ) == -1 )
-//                Utilities.logError("Tile Counter for " + currTile.getType().toString() + " is -1! ");
-//
-//            prepareNumber(currTile.getNumericValue());
-//
-//            for (int i = 0; i < 5; i++) {
-//                int finalI = i;
-//                Utilities.tryCatch(
-//                    () -> {
-//                            TextView currDigit = Objects.requireNonNull ( (TextView) scoreMap.get(finalI) );
-//                            currDigit.setText(String.valueOf(scoreText.charAt(finalI)));
-//                        },
-//                    Handlers.NULL_POINTER_EXCEPTION
-//                );
-//
-//            }
-//        }
-//    }
-
     private void updateScore(Integer numericValue) {
         prepareNumber(numericValue);
 
@@ -518,25 +432,11 @@ public class Game_Manager {
 
     }
 
-
-//    public Boolean verifyLoss(SecondFragment.gameTile currTile) {
-//        if (currTile == null) {
-//            Log.d(SecondFragment.ERROR_TAG, "Tile couldn't be extracted since it doesn't exist");
-//            return false;
-//        }
-//        return currTile.getNumericValue() == 0;
-//    }
-//
-//
-//
-//    public Boolean verifyWin() {
-//        int totalTwo = Objects.requireNonNull(tileCounter.get(SecondFragment.tileTypes.TWO));
-//        int totalThree = Objects.requireNonNull(tileCounter.get(SecondFragment.tileTypes.THREE));
-//
-//        isWinningState = totalTwo == 0 && totalThree == 0;
-//
-//        return isWinningState;
-//    }
-
+    public boolean verifyLoss() {
+        return gameBoard.boardLost;
+    }
+    public boolean verifyWin() {
+        return gameBoard.boardCompleted;
+    }
 
 }

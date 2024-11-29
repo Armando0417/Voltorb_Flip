@@ -3,10 +3,13 @@ package com.example.voltorbflipmobile;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -23,6 +26,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -62,7 +66,6 @@ public class SecondFragment extends Fragment {
         }
     }
 
-
     static class NonScrollableGridLayoutManager extends GridLayoutManager {
 
         public NonScrollableGridLayoutManager(Context context, int spanCount) {
@@ -80,52 +83,52 @@ public class SecondFragment extends Fragment {
         }
     }
 
-//    public class GridBoxItemDecoration extends RecyclerView.ItemDecoration {
-//        private final int borderThickness;
-//        private final Paint paint;
-//
-//        public GridBoxItemDecoration(int color, int thickness) {
-//            this.borderThickness = thickness;
-//            this.paint = new Paint();
-//            this.paint.setColor(color);
-//            this.paint.setStyle(Paint.Style.STROKE);
-//            this.paint.setStrokeWidth(thickness);
-//        }
-//
-//        @Override
-//        public void onDrawOver(@NonNull Canvas canvas, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-//            int childCount = parent.getChildCount();
-//
-//            float parentLeft = parent.getLeft();
-//            float parentTop = parent.getTop();
-//            float parentRight = parent.getRight();
-//            float parentBottom = parent.getBottom();
-//            canvas.drawRect(parentLeft, parentTop, parentRight, parentBottom, paint);
-//
-//            for (int i = 0; i < childCount; i++) {
-//                View child = parent.getChildAt(i);
-//
-//                // Get the item's bounds
-//                float left = child.getLeft();
-//                float top = child.getTop();
-//                float right = child.getRight() - 1;
-//                float bottom = child.getBottom() - 1;
-//
-//                // Draw a box around the item
-//                canvas.drawRect(left, top, right, bottom, paint);
-////                canvas.drawRect(parent.getLeft(), parent.getTop(), parent.getBottom(), parent.getRight(), paint);
-//            }
-//        }
-//    }
-//
-//
+    public class GridBoxItemDecoration extends RecyclerView.ItemDecoration {
+        private final int borderThickness;
+        private final Paint paint;
+
+        public GridBoxItemDecoration(int color, int thickness) {
+            this.borderThickness = thickness;
+            this.paint = new Paint();
+            this.paint.setColor(color);
+            this.paint.setStyle(Paint.Style.STROKE);
+            this.paint.setStrokeWidth(thickness);
+        }
+
+        @Override
+        public void onDrawOver(@NonNull Canvas canvas, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            int childCount = parent.getChildCount();
+
+            float parentLeft = parent.getLeft();
+            float parentTop = parent.getTop();
+            float parentRight = parent.getRight();
+            float parentBottom = parent.getBottom();
+            canvas.drawRect(parentLeft, parentTop, parentRight, parentBottom, paint);
+
+            for (int i = 0; i < childCount; i++) {
+                View child = parent.getChildAt(i);
+
+                // Get the item's bounds
+                float left = child.getLeft();
+                float top = child.getTop();
+                float right = child.getRight() - 1;
+                float bottom = child.getBottom() - 1;
+
+                // Draw a box around the item
+                canvas.drawRect(left, top, right, bottom, paint);
+//                canvas.drawRect(parent.getLeft(), parent.getTop(), parent.getBottom(), parent.getRight(), paint);
+            }
+        }
+    }
+
+
 
 
     // ================================================================
     //                Continuation of Fragment Class
     // ================================================================
 
-    // Region ======== Utilities ========
+    // Region ======== Miscellaneous Variables ========
 
     private FrameLayout animationOverlay;
 
@@ -136,6 +139,13 @@ public class SecondFragment extends Fragment {
     public boolean isAnimating = false;
 
     public Game_Manager gm;
+
+    public FrameLayout stateChanger;
+    public  TextView[] loseText = new TextView[2];
+
+    public boolean startLoseAnimation = false;
+
+
 
     private static final int[] verticalIDs = {
             R.id.vertical_connector_0,
@@ -165,6 +175,9 @@ public class SecondFragment extends Fragment {
         binding = FragmentSecondBinding.inflate(inflater, container, false);
         View view = binding.getRoot();
 
+        stateChanger = view.findViewById(R.id.next_state_trigger);
+        loseText[0] = view.findViewById(R.id.you_lose_text_background);
+        loseText[1] = view.findViewById(R.id.you_lose_text_foreground);
 
         Utilities.tryCatch(() -> {
             animationOverlay = view.findViewById(R.id.animation_overlay);
@@ -199,15 +212,16 @@ public class SecondFragment extends Fragment {
 
         // Make sure tiles is not null and has items
         if (gm.getGameBoard().getBoardAsList() != null && !gm.getGameBoard().getBoardAsList().isEmpty()) {
-
             TileAdapter adapter = new TileAdapter(gm.getGameBoard().getBoardAsList(), this);
             recyclerView.setAdapter(adapter);
-
         }
 
         else {
             Log.e("SecondFragment", "Game board is empty or null.");
         }
+
+
+
 
         // Position connectors after RecyclerView layout is complete
         recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -413,12 +427,6 @@ public class SecondFragment extends Fragment {
     }
 
     public void playOverlayAnimation(int[] animationFrames, View tileView, Tiles.gameTile currentTile) {
-            if (isAnimating) {
-                Utilities.logError("Animation currently being played, actions are disabled");
-                return;
-            }
-
-            isAnimating = true;
 
             // Get tile's position on the screen
             int[] location = new int[2];
@@ -472,10 +480,28 @@ public class SecondFragment extends Fragment {
 
                 if (currentTile.getNumericValue() == 0) {
                     Utilities.playSound(Utilities.SoundEffects.EXPLOSION_SFX);
-                    Utilities.logDebug("Explosion Sound was played!");
+
+                    Utilities.logDebug("Loss condition has been met, Triggering lose animation.");
+
+                    Game_Manager.isInteractionAllowed = false;
+
+                    Utilities.delayedHandler( () -> {
+                        stateChanger.setVisibility(View.VISIBLE);
+                        stateChanger.setBackgroundColor(Color.argb(126, 210, 0, 0) );
+                        loseText[0].setVisibility(View.VISIBLE);
+                        loseText[1].setVisibility(View.VISIBLE);
+
+                        stateChanger.setOnClickListener( v -> {
+                            stateChanger.setVisibility(View.GONE);
+                            triggerLoseAnimation();
+                        });
+
+                    }, 1000);
                 }
+
                 else {
                     Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
+                    Game_Manager.isInteractionAllowed = true;
                 }
 
                 animator.addListener(new AnimatorListenerAdapter() {
@@ -485,24 +511,30 @@ public class SecondFragment extends Fragment {
 
                         gm.getGameBoard().updateBoard(currentTile.getRowCol().first, currentTile.getRowCol().second);
 
-//                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-////                            if (Game_Manager.verifyLoss(currentTile)) {
-////                                Log.d(Utilities.DEBUG_TAG, "Lose Works!");
-////                                triggerLoseAnimation();
-////
-////                            }
-////                            if (gm.verifyWin()) {
-////                                Log.d(Utilities.DEBUG_TAG, "Win Works!");
-////                                Utilities.playSound(Utilities.SoundEffects.LEVEL_COMPLETE_SFX);
-////                            }
-//                        }, 500);
+                        Utilities.delayedHandler( () -> {
 
+                             if (gm.verifyWin()) {
+                                Utilities.logDebug("Win condition has been met, Triggering win animation.");
+                                Utilities.playSound(Utilities.SoundEffects.LEVEL_COMPLETE_SFX);
+                                //TODO ADD A DISPLAY BUTTON TO MOVE TO A NEW LEVEL (SCORE GETS STORED AND GENERATE NEW BOARD)
+                            }
+                        }, Utilities.ANIMATION_DELAY);
                     }
                 });
             });
         }
 
     public void triggerLoseAnimation() {
+        Utilities.delayedHandler(() -> {
+            showAllTiles();
+
+            Utilities.delayedHandler( this::flipAllDown, Utilities.ANIMATION_DURATION);
+
+        }, Utilities.ANIMATION_DURATION);
+
+    }
+
+    public void flipAllDown() {
         RecyclerView recView = binding.recyclerView;
 
         final int TOTAL_COLUMNS = 6;    // Total columns in the overall grid
@@ -522,128 +554,58 @@ public class SecondFragment extends Fragment {
                     RecyclerView.ViewHolder viewHolder = recView.findViewHolderForAdapterPosition(position);
 
                     if (viewHolder instanceof TileAdapter.GameTileHolder) {
-                        TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
 
-                        tileHolder.flipDown();
-                        Game_Manager.isWinningState = false;
+                        TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
+                        if (tileHolder.isFlippedUp) {
+                            tileHolder.flipDown();
+                        }
+//                        Game_Manager.isWinningState = false;
                     }
                 }
-                Utilities.delayedHandler(() -> {
-
-
-                }, 200);
 
             }, col * 500);
         }
+
+        Utilities.delayedHandler( () -> {
+            Game_Manager.isInteractionAllowed = true;
+            Game_Manager.printCurrentBoard();
+            gm.resetBoard();
+
+            RecyclerView recyclerView = binding.recyclerView;
+            TileAdapter adapter = new TileAdapter(gm.getGameBoard().getBoardAsList(), this);
+            recyclerView.setAdapter(adapter);
+
+        }, 2500);
     }
 
 
+    public void showAllTiles() {
+        RecyclerView recView = binding.recyclerView;
 
-//    private void createGrid(int screenWidth) {
-//        int tileDimensions = screenWidth / 10;
-//
-//        finalBoard = new ArrayList<>(TOTAL_SIZE);
-//        for (int i = 0; i < TOTAL_SIZE; i++) {
-//            finalBoard.add(new ArrayList<>(TOTAL_SIZE));
-//        }
-//
-//        ArrayList<ArrayList<Integer>> testBoard = Game_Manager.generateNewBoard();
-//
-//        // Create the grid
-//        for (int row = 0; row < TOTAL_SIZE; row++) {
-//            for (int col = 0; col < TOTAL_SIZE; col++) {
-//
-//                if (row == BOARD_SIZE && col == BOARD_SIZE) {
-//                    continue;
-//                }
-//
-//                if (row == BOARD_SIZE) {
-//                    finalBoard.get(row).add(col,
-//                            new infoTile(
-//                                    new Pair<>(row, col),               // row, col
-//                                    tileDimensions, tileDimensions,     // width, height
-//                                    true                               // mark the column
-//                            ));
-//                    ((infoTile) finalBoard.get(row).get(col)).set_row_col(row, col);
-//                }
-//                else if (col == BOARD_SIZE) {
-//                    finalBoard.get(row).add(col,
-//                            new infoTile(
-//                                    new Pair<>(row, col),               // row, col
-//                                    tileDimensions, tileDimensions,     // width, height
-//                                    false                                // mark the column
-//                            ));
-//                    ((infoTile) finalBoard.get(row).get(col)).set_row_col(row, col);
-//                }
-//                else {
-//                    finalBoard.get(row).add(col,
-//                            new gameTile(
-//                                    tileTypes.values()[testBoard.get(row).get(col)], // Tile type
-//                                    new Pair<>(row, col),                            // row & col
-//                                    tileDimensions, tileDimensions                   // width & height
-//                            ));
-//
-//                    gameTile currTile = (gameTile) finalBoard.get(row).get(col);
-//                    currTile.setValueImage(tileTypes.values()[testBoard.get(row).get(col)]);
-//                }
-//            }
-//        }
-//            populateInfoTiles();
-//            Log.d(DEBUG_TAG, "Finished Create grid with a size of " + finalBoard.size() + "x" + finalBoard.get(0).size());
-//        }
+        final int TOTAL_COLUMNS = 6;    // Total columns in the overall grid
+        final int FLIP_ROWS = 5;        // Rows to flip
+        final int FLIP_COLUMNS = 5;     // Columns to flip
 
+        for (int col = 0; col < FLIP_COLUMNS; col++) {
 
-//        private void flattenBoard() {
-//            for (ArrayList<Tile> row : finalBoard) {
-//                for (Tile curr : row) {
-//                    if (curr != null) {
-//                        flattenedBoard.add(curr);
-//                    }
-//                }
-//            }
-//        }
+            for (int row = 0; row < FLIP_ROWS; row++) {
+                int position = (row * TOTAL_COLUMNS) + col;
 
+                // Get the ViewHolder for the current position
+                RecyclerView.ViewHolder viewHolder = recView.findViewHolderForAdapterPosition(position);
 
-//        private ArrayList<ArrayList<Integer>> testBoardGenerator() {
-//            finalBoard = new ArrayList<>(TOTAL_SIZE);
-//            for (int i = 0; i < TOTAL_SIZE; i++) {
-//                finalBoard.add(new ArrayList<>(TOTAL_SIZE));
-//            }
-//
-//        /*
-//            Test Board Layout:
-//                0 3 1 3 2 0
-//                0 0 0 0 2 0
-//                0 2 1 3 0 0
-//                0 0 1 3 0 0
-//                1 2 3 2 1 0
-//                0 0 0 0 0 _
-//         */
-//
-//            ArrayList<ArrayList<Integer>> testBoard = new ArrayList<>();
-//            testBoard.add(new ArrayList<>(Arrays.asList(0, 3, 1, 3, 2, 0)));
-//            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 0, 0, 2, 0)));
-//            testBoard.add(new ArrayList<>(Arrays.asList(0, 2, 1, 3, 0, 0)));
-//            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 1, 3, 0, 0)));
-//            testBoard.add(new ArrayList<>(Arrays.asList(1, 2, 3, 2, 1, 0)));
-//            testBoard.add(new ArrayList<>(Arrays.asList(0, 0, 0, 0, 0, 0)));
-//
-//            return testBoard;
-//        }
+                if (viewHolder instanceof TileAdapter.GameTileHolder) {
 
+                    TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
+                    if (tileHolder.isFlippedDown) {
+                        tileHolder.flipUp();
+                    }
+//                    Game_Manager.isWinningState = false;
+                }
+            }
+        }
 
-//        private void populateInfoTiles() {
-//            for (int row = 0; row < TOTAL_SIZE; row++) {
-//                for (int col = 0; col < TOTAL_SIZE; col++) {
-//                    if (row == BOARD_SIZE && col == BOARD_SIZE) {
-//                        continue;
-//                    }
-//                    if (finalBoard.get(row).get(col) instanceof infoTile) {
-//                        ((infoTile) finalBoard.get(row).get(col)).tally_points_bombs(finalBoard);
-//                    }
-//                }
-//            }
-//        }
+    }
 
 
     @Override

@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="@color/background_tile"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
 <!--    <FrameLayout-->
@@ -64,13 +64,56 @@
     />
 
 
+    <FrameLayout
+        android:id="@+id/next_state_trigger"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        >
+
+        <TextView
+            android:id="@+id/you_lose_text_background"
+            android:fontFamily="@font/silkscreen_regular"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/black"
+            android:text="@string/you_lose_text"
+            android:textSize="65sp"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:layout_marginBottom="300dp"
+            >
+        </TextView>
+
+        <TextView
+            android:id="@+id/you_lose_text_foreground"
+            android:fontFamily="@font/silkscreen_regular"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/white"
+            android:text="@string/you_lose_text"
+            android:textSize="65sp"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:translationX="5dp"
+            android:translationY="-3dp"
+            android:layout_marginBottom="300dp"
+            >
+        </TextView>
+
+
+    </FrameLayout>
+
+
+
+
     <include layout="@layout/score_board"
         android:id="@+id/scoreboard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="50dp"
         android:layout_marginTop="450dp"
-    >
+        >
 
     </include>
 
