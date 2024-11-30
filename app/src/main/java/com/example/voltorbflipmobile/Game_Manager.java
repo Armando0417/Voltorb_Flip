@@ -21,6 +21,8 @@ public class Game_Manager {
     public static final int BOARD_SIZE = 6;
 
 
+    //TODO: FIX THE ANIMATION DELAYS FOR THE OVERLAY. SOUND IS ACTIVATING TOO LATE!!
+
 
 
     //Region DEBUG BOARD:
