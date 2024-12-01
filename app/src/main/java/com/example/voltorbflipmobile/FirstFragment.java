@@ -107,7 +107,6 @@ public class FirstFragment extends Fragment {
         View tile3 = gridLayout.findViewById(R.id.anim_tile3);
         View tileExp = gridLayout.findViewById(R.id.anim_tileExp);
 
-
         ImageView tile1Back = tile1.findViewById(R.id.back_image);
         ImageView tile2Back = tile2.findViewById(R.id.back_image);
         ImageView tile3Back = tile3.findViewById(R.id.back_image);
@@ -117,7 +116,6 @@ public class FirstFragment extends Fragment {
         ImageView tile2Front = tile2.findViewById(R.id.front_image);
         ImageView tile3Front = tile3.findViewById(R.id.front_image);
         ImageView tileExpFront = tileExp.findViewById(R.id.front_image);
-
 
         tile1Back.setImageResource(R.drawable.big_back_of_tile);
         tile2Back.setImageResource(R.drawable.big_back_of_tile);
@@ -148,7 +146,6 @@ public class FirstFragment extends Fragment {
         tileTable.put("tile2Front", tile2Front);
         tileTable.put("tile3Front", tile3Front);
         tileTable.put("tileExpFront", tileExpFront);
-
 
 }
 
@@ -281,7 +278,7 @@ public class FirstFragment extends Fragment {
                 FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
 
                 int offsetX = (params.width - tileView.getWidth()) / 2;
-                int offsetY = (params.height - tileView.getHeight()) / 2;
+                int offsetY = (params.height - tileView.getHeight()) / 2 + 3;
                 params.leftMargin = tileRelativeX - offsetX + 6;
                 params.topMargin = tileRelativeY - offsetY + 5;
 

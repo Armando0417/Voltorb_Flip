@@ -152,10 +152,8 @@ public class Game_Manager {
                     if (tile instanceof Tiles.gameTile) {
                         Tiles.gameTile currTile = (Tiles.gameTile) tile;
                         tileFrequencies.merge(currTile.getType(), 1, Integer::sum);
-
                     }
                 }
-
             }
         }
 
@@ -184,14 +182,13 @@ public class Game_Manager {
             }
 
             initialGridValues = verifyGrid(initialGridValues);
-            Log.d(Utilities.DEBUG_TAG, initialGridValues.toString());
 
-            if (useDebugBoard) {
+            if (useDebugBoard) 
                 createGameBoard(testBoardGenerator());
-            }
-            else {
+
+            else
                 createGameBoard(initialGridValues);
-            }
+
 
         }
 
@@ -224,7 +221,6 @@ public class Game_Manager {
 
             if (currTile.getNumericValue() > 0
                     && Objects.requireNonNull( tileFrequencies.get(currTile.getType()) )  > 0) {
-
 
                 tileFrequencies.merge(currTile.getType(), 1, (key, decrease) -> key - decrease);
 

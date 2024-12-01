@@ -1,5 +1,7 @@
 package com.example.voltorbflipmobile;
 
+import android.animation.ValueAnimator;
+import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -9,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import android.view.autofill.AutofillId;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import android.widget.TextView;
@@ -18,6 +21,8 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 
 
 public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -97,6 +102,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         public boolean isFlippedUp = false;
         public boolean isFlippedDown = true;
 
+        private Tiles.gameTile currTile;
+
         public GameTileHolder(@NonNull View itemView) {
             super(itemView);
             frontImage = itemView.findViewById(R.id.front_image);
@@ -105,32 +112,98 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         public void bind(Tiles.gameTile tile, SecondFragment currFragment) {
+            currTile = tile;
             backImage.setImageBitmap(tile.getBackImage());
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
 
-            if (Game_Manager.isInteractionAllowed) {
 
             backImage.setOnClickListener(v -> {
-                Game_Manager.isInteractionAllowed = false;
-                flipUp();
 
-                Utilities.delayedHandler( () -> {
-                    try {
-                        currFragment.playOverlayAnimation(animationFrames, itemView, tile);
-                    }
-                    catch (Exception e) {
-                        Utilities.logError("Error in overlay animation: " + e);
-                    }
-                    finally {
-                        Utilities.logDebug("Animation Ended. Re-enabling interactions.");
-                    }
-                }, Utilities.ANIMATION_DURATION);
+                if (Game_Manager.isInteractionAllowed) {
+                    Game_Manager.isInteractionAllowed = false;
+
+                    flipTileUP( tile.getType().ordinal() );
+
+
+                    Utilities.delayedHandler( () -> {
+                        Utilities.tryCatch( () -> {
+                            currFragment.playOverlayAnimation(animationFrames, itemView, tile);
+                        }, Handlers.RUNTIME_EXCEPTION);
+
+                    }, Utilities.ANIMATION_DURATION);
+                }
+
+                else {
+                    Utilities.logError("Interaction is not allowed yet.");
+                }
 
             });
-            }
         }
 
+        public void flipTileUP (Integer tileVal) {
+
+            LinkedList<Bitmap> correspondingSequence = Utilities.CORRESPONDING_FLIP_TABLE.get(tileVal);
+
+            assert correspondingSequence != null;
+            ValueAnimator animator = ValueAnimator.ofInt(0, correspondingSequence.size() - 1);
+
+                animator.setDuration(correspondingSequence.size() * 45L);
+
+                animator.addUpdateListener(animation -> {
+                    int frameIndex = (int) animation.getAnimatedValue();
+
+                backImage.setImageBitmap(correspondingSequence.get(frameIndex));
+            });
+
+            animator.start();
+            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
+            isFlippedUp = true;
+            isFlippedDown = false;
+
+            Utilities.delayedHandler( () -> {
+                backImage.setImageBitmap(currTile.getBackImage());
+                backImage.setVisibility(View.INVISIBLE);
+                frontImage.setVisibility(View.VISIBLE);
+
+            }, 180);
+
+
+        }
+
+        public void flipTileDOWN (Integer tileVal) {
+
+            LinkedList<Bitmap> correspondingSequence = Utilities.CORRESPONDING_FLIP_TABLE.get(tileVal);
+
+            assert correspondingSequence != null;
+                LinkedList<Bitmap> reversedSequence = new LinkedList<>(correspondingSequence);
+
+            Collections.reverse(reversedSequence);
+
+            ValueAnimator animator = ValueAnimator.ofInt(0, reversedSequence.size() - 1);
+
+            animator.setDuration(reversedSequence.size() * 45L);
+
+            animator.addUpdateListener(animation -> {
+                int frameIndex = (int) animation.getAnimatedValue();
+
+                frontImage.setImageBitmap(reversedSequence.get(frameIndex));
+            });
+
+            animator.start();
+            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
+            isFlippedUp = false;
+            isFlippedDown = true;
+
+            Utilities.delayedHandler( () -> {
+                frontImage.setImageBitmap(currTile.getFrontImage());
+                frontImage.setVisibility(View.INVISIBLE);
+                backImage.setVisibility(View.VISIBLE);
+
+            }, 180);
+
+
+        }
 
 
         public void flipUp() {

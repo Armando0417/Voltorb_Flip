@@ -620,9 +620,19 @@ public class SecondFragment extends Fragment {
 
                         TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
                         if (tileHolder.isFlippedUp) {
-                            tileHolder.flipDown();
+//                                tileHolder.flipDown();
+                            Tiles.gameTile currTile = (Tiles.gameTile) gm.getGameBoard().getFlattenedBoard().get(position);
+
+                            if (currTile != null) {
+                                tileHolder.flipTileDOWN ( currTile.getType().ordinal() );
+                            }
+                            else {
+                                Utilities.logError("Tile is null");
+                            }
+
+
                         }
-//                        Game_Manager.isWinningState = false;
+                        Game_Manager.isWinningState = false;
                     }
                 }
 
@@ -631,7 +641,6 @@ public class SecondFragment extends Fragment {
 
         Utilities.delayedHandler( () -> {
             Game_Manager.isInteractionAllowed = true;
-            Game_Manager.printCurrentBoard();
             gm.resetBoard();
 
             RecyclerView recyclerView = binding.recyclerView;
@@ -661,14 +670,24 @@ public class SecondFragment extends Fragment {
 
                     TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
                     if (tileHolder.isFlippedDown) {
-                        tileHolder.flipUp();
+//                        tileHolder.flipUp();
+
+                        Tiles.gameTile currTile = (Tiles.gameTile) gm.getGameBoard().getFlattenedBoard().get(position);
+
+                        if (currTile != null) {
+                            tileHolder.flipTileUP ( currTile.getType().ordinal() );
+                        }
+                        else {
+                            Utilities.logError("Tile is null");
+                        }
                     }
-//                    Game_Manager.isWinningState = false;
+                    Game_Manager.isWinningState = false;
+                    }
                 }
             }
+
         }
 
-    }
 
 
     @Override

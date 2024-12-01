@@ -15,8 +15,10 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Stack;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -92,6 +94,11 @@ public class Utilities {
     public static final HashMap<Integer, List<Bitmap>> DECODED_ANIM_TABLE = new HashMap<>();
     public static final HashMap<Integer, Bitmap> IMAGE_TABLE = new HashMap<>();
 
+    public static final HashMap<Integer, Bitmap> TILE_FLIP_TABLE = new HashMap<>();
+
+    public static final HashMap<Integer, LinkedList<Bitmap>> CORRESPONDING_FLIP_TABLE = new HashMap<>();
+    public static final LinkedList<Bitmap> CORRESPONDING_FLIP_SEQUENCE = new LinkedList<>();
+
 
     // ================================================================
     //                        Creation Method
@@ -102,7 +109,12 @@ public class Utilities {
 
         CountDownLatch latch = new CountDownLatch(1);
 
+
+
+
+
         try {
+
             backgroundThread.submit( () -> {
 
                 SOUND_TABLE.put(EXPLOSION_SFX.ordinal(),          soundpool.load(context, R.raw.explosion_sfx, 1));
@@ -156,6 +168,37 @@ public class Utilities {
             });
 
             backgroundThread.submit(() -> {
+
+                Bitmap back_transition =    BitmapFactory.decodeResource(context.getResources(), R.drawable.flip_back);
+                Bitmap middle_transition =  BitmapFactory.decodeResource(context.getResources(), R.drawable.flip_middle);
+                Bitmap voltorb_transition = BitmapFactory.decodeResource(context.getResources(), R.drawable.flip_voltorb_transition);
+                Bitmap one_transition =     BitmapFactory.decodeResource(context.getResources(), R.drawable.flip_1_transition);
+                Bitmap two_transition =     BitmapFactory.decodeResource(context.getResources(), R.drawable.flip_2_transition);
+                Bitmap three_transition =   BitmapFactory.decodeResource(context.getResources(), R.drawable.flip_3_transition);
+
+                CORRESPONDING_FLIP_SEQUENCE.add(back_transition);
+                CORRESPONDING_FLIP_SEQUENCE.add(middle_transition);
+
+                LinkedList<Bitmap> temp0 = new LinkedList<>(CORRESPONDING_FLIP_SEQUENCE);
+                temp0.add(voltorb_transition);
+
+                LinkedList<Bitmap> temp1 = new LinkedList<>(CORRESPONDING_FLIP_SEQUENCE);
+                temp1.add(one_transition);
+
+                LinkedList<Bitmap> temp2 = new LinkedList<>(CORRESPONDING_FLIP_SEQUENCE);
+                temp2.add(two_transition);
+
+                LinkedList<Bitmap> temp3 = new LinkedList<>(CORRESPONDING_FLIP_SEQUENCE);
+                temp3.add(three_transition);
+
+                CORRESPONDING_FLIP_TABLE.put (0, temp0);
+                CORRESPONDING_FLIP_TABLE.put (1, temp1);
+                CORRESPONDING_FLIP_TABLE.put (2, temp2);
+                CORRESPONDING_FLIP_TABLE.put (3, temp3);
+
+            });
+
+            backgroundThread.submit(() -> {
                 IMAGE_TABLE.put(VOLTORB.ordinal(),          BitmapFactory.decodeResource(context.getResources(), R.drawable.voltorb));
                 IMAGE_TABLE.put(ONE.ordinal(),              BitmapFactory.decodeResource(context.getResources(), R.drawable.one));
                 IMAGE_TABLE.put(TWO.ordinal(),              BitmapFactory.decodeResource(context.getResources(), R.drawable.two));
@@ -181,6 +224,22 @@ public class Utilities {
     // ================================================================
     //                        Utility Methods
     // ================================================================
+
+    public static void prepareFlipAnim(Integer tileValue) {
+        if (tileValue == null) {
+            Utilities.logError("Value given does not exist!");
+            return;
+        }
+        Utilities.logDebug("Image value is " + tileValue);
+
+        if (CORRESPONDING_FLIP_SEQUENCE.size() == 2) {
+            CORRESPONDING_FLIP_SEQUENCE.offerLast(TILE_FLIP_TABLE.get(tileValue));
+        }
+    }
+
+    public static void refreshFlipAnim() {
+        CORRESPONDING_FLIP_SEQUENCE.removeLast();
+    }
 
 
     public static void playSound(SoundEffects soundKey) {
