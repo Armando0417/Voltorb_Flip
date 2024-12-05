@@ -85,16 +85,7 @@ public class FirstFragment extends Fragment {
         explosionAnimations.add(R.drawable.animation_explosion_7_final);
         explosionAnimations.add(R.drawable.animation_explosion_8_final);
 
-
         ArrayList<Integer> explosionIds = explosionAnimations;
-
-//        List<Bitmap> decodedExplosionFrames = new ArrayList<>();
-//
-//        for (Integer explosionId : explosionIds) {
-//            Bitmap decodedFrame = BitmapFactory.decodeResource(getResources(), explosionId);
-//            decodedExplosionFrames.add(decodedFrame);
-//        }
-
 
     }
 

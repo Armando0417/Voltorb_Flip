@@ -1,5 +1,7 @@
 package com.example.voltorbflipmobile;
 
+import static java.lang.Math.max;
+
 import android.os.CountDownTimer;
 
 import android.util.Log;
@@ -7,10 +9,13 @@ import android.util.Pair;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Random;
@@ -18,11 +23,6 @@ import java.util.Random;
 import com.example.voltorbflipmobile.Tiles.*;
 
 public class Game_Manager {
-    public static final int BOARD_SIZE = 6;
-
-
-    //TODO: FIX THE ANIMATION DELAYS FOR THE OVERLAY. SOUND IS ACTIVATING TOO LATE!!
-
 
 
     //Region DEBUG BOARD:
@@ -37,29 +37,39 @@ public class Game_Manager {
         public static final int BOARD_SIZE = 6;
         public static final int GRID_SIZE = 5;
         public static final int MAX_TILE_VALUE = 4;
+        private int currentLevel = -1;
 
         ArrayList<ArrayList<Tile>> tiles;
 
         ArrayList<Tiles.Tile> flattenedBoard;
 
         HashMap<Utilities.TileTypes, Integer> tileFrequencies;
+        HashMap<Integer, Integer> initialWeights;
+        ArrayList<Pair<Integer, Double> > cumulative_probabilities;
 
         boolean boardLost = false;
         boolean boardCompleted = false;
 
 
-        public Board() {
+        public Board(int level) {
             tileFrequencies = new HashMap<>();
             flattenedBoard = new ArrayList<>();
+            initialWeights = new HashMap<>();
+
             tiles = new ArrayList<>();
+            cumulative_probabilities = new ArrayList<>();
 
             boardLost = false;
             boardCompleted = false;
 
-            generateNewGrid();
+            currentLevel = level;
+
+            prepareWeights();
+            generateWeightedGrid();
             countBoard();
             flattenBoard();
         }
+
 
         private void flattenBoard() {
             for (ArrayList<Tile> row : tiles) {
@@ -70,6 +80,46 @@ public class Game_Manager {
                 }
             }
         }
+
+
+        private void prepareWeights() {
+            if (currentLevel < 0) {
+                Utilities.logError( "Level was not loaded properly ");
+                return;
+            }
+            initialWeights.put ( 0,        5 + currentLevel * 2            );
+            initialWeights.put ( 1,        max(16 - currentLevel * 2, 8)   );
+            initialWeights.put ( 2,        max(6 - currentLevel, 2)        );
+            initialWeights.put ( 3,        max(3 - currentLevel, 2)        );
+
+            HashMap<Integer, Double> normalizedWeights = new HashMap<>( normalizeWeights(initialWeights) );
+            cumulative_probabilities = generate_cumulative_probabilities(normalizedWeights);
+            return;
+        }
+
+        private ArrayList<Pair<Integer, Double> > generate_cumulative_probabilities(HashMap<Integer, Double> normalized) {
+            ArrayList<Pair<Integer, Double> > cumulative_probabilities = new ArrayList<>();
+            double cumulative_prob = 0;
+            for (Map.Entry<Integer, Double> pair : normalized.entrySet()) {
+                cumulative_prob += pair.getValue();
+                cumulative_probabilities.add( new Pair<>(pair.getKey(), cumulative_prob) );
+            }
+            return cumulative_probabilities;
+        }
+
+        private HashMap<Integer, Double> normalizeWeights(HashMap<Integer, Integer> weights) {
+            HashMap<Integer, Double> normalizedWeights = new HashMap<>();
+            double total = 0;
+            for (Map.Entry<Integer, Integer> pair : weights.entrySet()) {
+                total += pair.getValue();
+            }
+            for (HashMap.Entry<Integer, Integer> pair : weights.entrySet()) {
+                normalizedWeights.put(pair.getKey(), pair.getValue() / total);
+            }
+            return normalizedWeights;
+        }
+
+
 
         public ArrayList<Tile> getFlattenedBoard() {
             return flattenedBoard;
@@ -100,26 +150,26 @@ public class Game_Manager {
                         this.tiles.get(rowIndex).add(columnIndex,
                                 (Tile) new infoTile(
                                        new Pair<>(rowIndex, columnIndex),               // rowIndex, columnIndex
-                                        tileSize, tileSize,     // width, height
-                                       true                               // mark the column
+                                        tileSize, tileSize,                             // width, height
+                                       true                                             // mark the column
                                ));
                         ((Tiles.infoTile) this.tiles.get(rowIndex).get(columnIndex)).set_row_col(rowIndex, columnIndex);
                     }
                     else if (columnIndex == GRID_SIZE) {
                         this.tiles.get(rowIndex).add(columnIndex,
                                 (Tile) new infoTile(
-                                        new Pair<>(rowIndex, columnIndex),               // rowIndex, columnIndex
-                                        tileSize, tileSize,     // width, height
-                                        false                                // mark the column
+                                        new Pair<>(rowIndex, columnIndex),                  // rowIndex, columnIndex
+                                        tileSize, tileSize,                                 // width, height
+                                        false                                               // mark the column
                                 ));
                         ((Tiles.infoTile) this.tiles.get(rowIndex).get(columnIndex)).set_row_col(rowIndex, columnIndex);
                     }
                     else {
                         this.tiles.get(rowIndex).add(columnIndex,
                                 (Tile) new Tiles.gameTile(
-                                        Utilities.TileTypes.values()[initialGridValues.get(rowIndex).get(columnIndex)],    // Tile type
-                                        new Pair<>(rowIndex, columnIndex),                                       // rowIndex & columnIndex
-                                        tileSize, tileSize                              // width & height
+                                        Utilities.TileTypes.values()[initialGridValues.get(rowIndex).get(columnIndex)],     // Tile type
+                                        new Pair<>(rowIndex, columnIndex),                                                  // rowIndex & columnIndex
+                                        tileSize, tileSize                                                                  // width & height
                                 ));
 
                         Tiles.gameTile currentTile = (Tiles.gameTile) this.tiles.get(rowIndex).get(columnIndex);
@@ -147,6 +197,12 @@ public class Game_Manager {
         }
 
         public void countBoard() {
+            tileFrequencies.put(Utilities.TileTypes.VOLTORB, 0);
+            tileFrequencies.put(Utilities.TileTypes.ONE, 0);
+            tileFrequencies.put(Utilities.TileTypes.TWO, 0);
+            tileFrequencies.put(Utilities.TileTypes.THREE, 0);
+
+
             for (ArrayList<Tiles.Tile> row : tiles) {
                 for (Tiles.Tile tile : row) {
                     if (tile instanceof Tiles.gameTile) {
@@ -159,25 +215,10 @@ public class Game_Manager {
 
 
         private void generateNewGrid() {
-
             ArrayList<ArrayList<Integer>> initialGridValues = new ArrayList<>();
 
             for (int rowIndex = 0; rowIndex < BOARD_SIZE; rowIndex++) {
-                ArrayList<Integer> newRow = new ArrayList<>();
-
-                for (int columnIndex = 0; columnIndex < BOARD_SIZE; columnIndex++) {
-                    if (rowIndex == GRID_SIZE && columnIndex == GRID_SIZE)
-                        continue;
-
-                    Random randomGenerator = new Random();
-
-                    int randomTileValue = randomGenerator.nextInt(MAX_TILE_VALUE);
-
-                    newRow.add(randomTileValue);
-
-                    if (rowIndex == GRID_SIZE || columnIndex == GRID_SIZE)
-                        newRow.set(columnIndex, 0);
-                }
+                final ArrayList<Integer> newRow = getNewRow(rowIndex);
                 initialGridValues.add(newRow);
             }
 
@@ -188,9 +229,77 @@ public class Game_Manager {
 
             else
                 createGameBoard(initialGridValues);
-
-
         }
+
+        private void generateWeightedGrid() {
+            ArrayList<ArrayList<Integer>> initialGridValues = new ArrayList<>();
+
+            for (int rowIndex = 0; rowIndex < BOARD_SIZE; rowIndex++) {
+                final ArrayList<Integer> newRow = getWeightedRow(rowIndex);
+                initialGridValues.add(newRow);
+            }
+
+            if (useDebugBoard)
+                createGameBoard(testBoardGenerator());
+
+            else
+                createGameBoard(initialGridValues);
+        }
+
+
+        @NonNull
+        private ArrayList<Integer> getNewRow(int rowIndex) {
+            ArrayList<Integer> newRow = new ArrayList<>();
+
+            for (int columnIndex = 0; columnIndex < BOARD_SIZE; columnIndex++) {
+                if (rowIndex == GRID_SIZE && columnIndex == GRID_SIZE)
+                    continue;
+
+                Random randomGenerator = new Random();
+
+                int randomTileValue = randomGenerator.nextInt(MAX_TILE_VALUE);
+
+                newRow.add(randomTileValue);
+
+                if (rowIndex == GRID_SIZE || columnIndex == GRID_SIZE)
+                    newRow.set(columnIndex, 0);
+            }
+            return newRow;
+        }
+        private ArrayList<Integer> getWeightedRow(int rowIndex) {
+            ArrayList<Integer> newRow = new ArrayList<>();
+
+            for (int columnIndex = 0; columnIndex < BOARD_SIZE; columnIndex++) {
+                if (rowIndex == GRID_SIZE && columnIndex == GRID_SIZE)
+                    continue;
+
+                Random randomGenerator = new Random();
+
+                int randomTileValue = pickValue( randomGenerator.nextDouble() );
+
+                if (randomTileValue == -1 ){
+                    newRow.add(0);
+                }
+                newRow.add(randomTileValue);
+
+
+
+                if (rowIndex == GRID_SIZE || columnIndex == GRID_SIZE)
+                    newRow.set(columnIndex, 0);
+            }
+            return newRow;
+        }
+
+        private Integer pickValue (Double randomValue) {
+            for (Pair< Integer, Double> pair : cumulative_probabilities) {
+                if (randomValue <= pair.second) {
+                    return pair.first;
+                }
+            }
+            return -1;
+        }
+
+
 
         private ArrayList<ArrayList<Integer>> testBoardGenerator() {
 
@@ -267,10 +376,11 @@ public class Game_Manager {
                     totalTileFrequencies.merge(initialGridValues.get(rowIndex).get(columnIndex), 1, Integer::sum);
 
                 }
-                if (rowTileFrequencies.getOrDefault(0, 0) > 4 ||
+                if (    rowTileFrequencies.getOrDefault(0, 0) > 4 ||
                         rowTileFrequencies.getOrDefault(1, 0) > 4 ||
                         rowTileFrequencies.getOrDefault(2, 0) > 4 ||
-                        rowTileFrequencies.getOrDefault(3, 0) > 4) {
+                        rowTileFrequencies.getOrDefault(3, 0) > 4)
+                {
                     rowsToRegen.add(rowIndex);
                 }
 
@@ -319,6 +429,7 @@ public class Game_Manager {
     static int currScore;
     public View score_boardView;
     public final int screenWidth;
+    public static final int BOARD_SIZE = 6;
 
     private static CountDownTimer countDownTimer;
     public static boolean isTimerRunning = false;
@@ -327,31 +438,46 @@ public class Game_Manager {
 
     public static boolean isInteractionAllowed = true;
 
+    public static boolean gameFinishedState = false;
+
+    public int levelNumber = 1;
+
     public Game_Manager(View _score_board, int _screenWidth) {
         this.score_boardView = _score_board;
         scoreMap = new HashMap<>();
+
+        levelNumber = 1;
         scoreText = "";
         currScore = 0;
         this.screenWidth = _screenWidth;
-        gameBoard = new Board();
+
+        gameBoard = new Board(levelNumber);
+
         loadScoreViews();
+
+    }
+
+    public void levelUp() {
+        levelNumber++;
     }
 
     public void resetBoard() {
         scoreText = "";
         currScore = 0;
-        gameBoard = new Board();
+        gameBoard = new Board(levelNumber);
         printCurrentBoard();
         isInteractionAllowed = true;
         scoreMap.forEach( (key, value) -> {
             value.setText("0");
         });
-
-
     }
 
     public Board getGameBoard() {
         return gameBoard;
+    }
+
+    public int getCurrentLevel() {
+        return levelNumber;
     }
 
     public static void printCurrentBoard() {
@@ -427,7 +553,6 @@ public void loadScoreViews() {
             );
 
         }
-
 
     }
 

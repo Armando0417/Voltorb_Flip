@@ -3,7 +3,6 @@ package com.example.voltorbflipmobile;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 
@@ -155,12 +154,10 @@ public class SecondFragment extends Fragment {
 
     public Game_Manager gm;
 
-    public FrameLayout stateChanger;
+    public FrameLayout stateLayout;
     public  TextView[] loseText = new TextView[2];
 
     public boolean startLoseAnimation = false;
-
-
 
     private static final int[] verticalIDs = {
             R.id.vertical_connector_0,
@@ -190,7 +187,7 @@ public class SecondFragment extends Fragment {
         binding = FragmentSecondBinding.inflate(inflater, container, false);
         View view = binding.getRoot();
 
-        stateChanger = view.findViewById(R.id.next_state_trigger);
+        stateLayout = view.findViewById(R.id.next_state_trigger);
         loseText[0] = view.findViewById(R.id.you_lose_text_background);
         loseText[1] = view.findViewById(R.id.you_lose_text_foreground);
 
@@ -208,7 +205,8 @@ public class SecondFragment extends Fragment {
 
         Utilities.tryCatch( () -> {
             SharedViewModel model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-            model.setLevelNumber(1);
+            model.setLevelNumber( gm.getCurrentLevel() );
+
         }, Handlers.GENERAL_EXCEPTION);
 
 
@@ -229,7 +227,6 @@ public class SecondFragment extends Fragment {
         recyclerView.addItemDecoration(new VerticalSpacingItemDecoration(30, 6));
 
         SharedViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-
 
         viewModel.getLevelNumber().observe(getViewLifecycleOwner(), levelNum -> {
             if (getActivity() != null) {
@@ -444,6 +441,12 @@ public class SecondFragment extends Fragment {
         int width;
         int height;
 
+        if (currentTile.getNumericValue() > 0) {
+            width = tileView.getWidth() * 2;
+            height = tileView.getHeight() * 2;
+            return new FrameLayout.LayoutParams(width, height);
+        }
+
         if (currentTile.getNumericValue() == 0 && frameIndex >= 3) {
             width = tileView.getWidth() * 3;
             height = tileView.getHeight() * 3;
@@ -457,6 +460,8 @@ public class SecondFragment extends Fragment {
     }
 
     public void playOverlayAnimation(int[] animationFrames, View tileView, Tiles.gameTile currentTile) {
+            Game_Manager.isInteractionAllowed = false;
+            long overlayDuration = 70L;
 
             // Get tile's position on the screen
             int[] location = new int[2];
@@ -468,7 +473,6 @@ public class SecondFragment extends Fragment {
             animationOverlay.getLocationOnScreen(overlayLocation);
             int tileRelativeX = tileX - overlayLocation[0];
             int tileRelativeY = tileY - overlayLocation[1];
-
 
             List<Bitmap> preloadedFrames = (currentTile.getNumericValue() == 0)
                     ? Utilities.DECODED_ANIM_TABLE.get(0)
@@ -488,9 +492,16 @@ public class SecondFragment extends Fragment {
 
                 // Create a ValueAnimator to control the frame changes
                 ValueAnimator animator = ValueAnimator.ofInt(0, animationFrames.length - 1);
-                animator.setDuration(animationFrames.length * 100L);
+
+                animator.setDuration(animationFrames.length * overlayDuration);
+
+
+                boolean isPoints = !(currentTile.getNumericValue() == 0);
+                int animationDelay = isPoints ? 400 : 900;
+
                 animator.addUpdateListener(animation -> {
                     int frameIndex = (int) animation.getAnimatedValue();
+
                     Bitmap currentBitmap = preloadedFrames.get(frameIndex);
 
                     FrameLayout.LayoutParams params = getLayoutParams(tileView, currentTile, frameIndex);
@@ -502,38 +513,36 @@ public class SecondFragment extends Fragment {
 
                     animationView.setLayoutParams(params);
 
-                    // Set the preloaded bitmap for the current frame
                     animationView.setImageBitmap(currentBitmap);
                 });
 
                 animator.start();
 
                 if (currentTile.getNumericValue() == 0) {
-                    Utilities.playSound(Utilities.SoundEffects.EXPLOSION_SFX);
-
+                    Utilities.delayedHandler( () -> Utilities.playSound(Utilities.SoundEffects.EXPLOSION_SFX), 300);
                     Utilities.logDebug("Loss condition has been met, Triggering lose animation.");
 
-                    Game_Manager.isInteractionAllowed = false;
-
                     Utilities.delayedHandler( () -> {
-                        stateChanger.setVisibility(View.VISIBLE);
-                        stateChanger.setBackgroundColor(Color.argb(126, 210, 0, 0) );
+                        stateLayout.setVisibility(View.VISIBLE);
+                        stateLayout.setBackgroundColor(Color.argb(126, 210, 0, 0) );
                         loseText[0].setVisibility(View.VISIBLE);
                         loseText[0].setText(R.string.you_lose_text);
                         loseText[1].setVisibility(View.VISIBLE);
                         loseText[1].setText(R.string.you_lose_text);
 
-                        stateChanger.setOnClickListener( v -> {
-                            stateChanger.setVisibility(View.GONE);
-                            triggerLoseAnimation();
+                        stateLayout.setOnClickListener(v -> {
+                            stateLayout.setVisibility(View.GONE);
+
+                            triggerFlipAllAnim();
                         });
 
-                    }, 1000);
+                    }, animationDelay);
                 }
 
                 else {
                     Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
-                    Game_Manager.isInteractionAllowed = true;
+                    Utilities.delayedHandler( () -> Game_Manager.isInteractionAllowed = true, 100);
+
                 }
 
                 animator.addListener(new AnimatorListenerAdapter() {
@@ -552,23 +561,23 @@ public class SecondFragment extends Fragment {
                                  Game_Manager.isInteractionAllowed = false;
 
                                  Utilities.delayedHandler( () -> {
-                                     stateChanger.setVisibility(View.VISIBLE);
-                                     stateChanger.setBackgroundColor(Color.argb(126, 0, 210, 0) );
+                                     stateLayout.setVisibility(View.VISIBLE);
+                                     stateLayout.setBackgroundColor(Color.argb(126, 0, 210, 0) );
                                      loseText[0].setVisibility(View.VISIBLE);
                                      loseText[0].setText(R.string.you_win);
                                      loseText[1].setVisibility(View.VISIBLE);
                                      loseText[1].setText(R.string.you_win);
 
-                                     stateChanger.setOnClickListener( v -> {
-                                         stateChanger.setVisibility(View.GONE);
-                                         triggerLoseAnimation();
+                                     stateLayout.setOnClickListener(v -> {
+                                         stateLayout.setVisibility(View.GONE);
+                                         triggerFlipAllAnim();
                                          try {
                                              SharedViewModel model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
                                              Integer currLevel = model.getLevelNumber().getValue();
-
-                                             if (currLevel != null)
-                                                model.setLevelNumber( currLevel + 1);
-
+                                             if (currLevel != null) {
+                                                 gm.levelUp();
+                                                 model.setLevelNumber( gm.getCurrentLevel() );
+                                             }
                                          }
                                          catch (Exception e) {
                                              Utilities.logError("Failure to update level number");
@@ -576,8 +585,7 @@ public class SecondFragment extends Fragment {
 
                                      });
 
-                                 }, 1000);
-
+                                 }, animationDelay);
 
                                 //TODO ADD A DISPLAY BUTTON TO MOVE TO A NEW LEVEL (SCORE GETS STORED AND GENERATE NEW BOARD)
                             }
@@ -587,12 +595,12 @@ public class SecondFragment extends Fragment {
             });
         }
 
-    public void triggerLoseAnimation() {
+
+    public void triggerFlipAllAnim() {
+        Game_Manager.gameFinishedState = true;
         Utilities.delayedHandler(() -> {
             showAllTiles();
-
             Utilities.delayedHandler( this::flipAllDown, Utilities.ANIMATION_DURATION);
-
         }, Utilities.ANIMATION_DURATION);
 
     }
@@ -620,9 +628,8 @@ public class SecondFragment extends Fragment {
 
                         TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
                         if (tileHolder.isFlippedUp) {
-//                                tileHolder.flipDown();
-                            Tiles.gameTile currTile = (Tiles.gameTile) gm.getGameBoard().getFlattenedBoard().get(position);
 
+                            Tiles.gameTile currTile = (Tiles.gameTile) gm.getGameBoard().getFlattenedBoard().get(position);
                             if (currTile != null) {
                                 tileHolder.flipTileDOWN ( currTile.getType().ordinal() );
                             }
@@ -630,24 +637,25 @@ public class SecondFragment extends Fragment {
                                 Utilities.logError("Tile is null");
                             }
 
-
                         }
                         Game_Manager.isWinningState = false;
                     }
                 }
+                if (Game_Manager.gameFinishedState)
+                    Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
 
-            }, col * 500);
+            }, col * 240);
         }
 
         Utilities.delayedHandler( () -> {
-            Game_Manager.isInteractionAllowed = true;
             gm.resetBoard();
-
+            Game_Manager.isInteractionAllowed = true;
+            Game_Manager.gameFinishedState = false;
             RecyclerView recyclerView = binding.recyclerView;
             TileAdapter adapter = new TileAdapter(gm.getGameBoard().getBoardAsList(), this);
             recyclerView.setAdapter(adapter);
 
-        }, 2500);
+        }, 1100);
     }
 
 
@@ -670,8 +678,6 @@ public class SecondFragment extends Fragment {
 
                     TileAdapter.GameTileHolder tileHolder = (TileAdapter.GameTileHolder) viewHolder;
                     if (tileHolder.isFlippedDown) {
-//                        tileHolder.flipUp();
-
                         Tiles.gameTile currTile = (Tiles.gameTile) gm.getGameBoard().getFlattenedBoard().get(position);
 
                         if (currTile != null) {
@@ -685,6 +691,8 @@ public class SecondFragment extends Fragment {
                     }
                 }
             }
+            if (Game_Manager.gameFinishedState)
+                Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
 
         }
 

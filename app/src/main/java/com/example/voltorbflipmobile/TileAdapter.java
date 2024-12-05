@@ -117,27 +117,23 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
 
-
             backImage.setOnClickListener(v -> {
-
                 if (Game_Manager.isInteractionAllowed) {
                     Game_Manager.isInteractionAllowed = false;
 
                     flipTileUP( tile.getType().ordinal() );
-
-
+                    
                     Utilities.delayedHandler( () -> {
                         Utilities.tryCatch( () -> {
                             currFragment.playOverlayAnimation(animationFrames, itemView, tile);
                         }, Handlers.RUNTIME_EXCEPTION);
 
-                    }, Utilities.ANIMATION_DURATION);
+                    }, 250);
                 }
 
                 else {
                     Utilities.logError("Interaction is not allowed yet.");
                 }
-
             });
         }
 
@@ -148,7 +144,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             assert correspondingSequence != null;
             ValueAnimator animator = ValueAnimator.ofInt(0, correspondingSequence.size() - 1);
 
-                animator.setDuration(correspondingSequence.size() * 45L);
+                animator.setDuration(correspondingSequence.size() * 35L);
 
                 animator.addUpdateListener(animation -> {
                     int frameIndex = (int) animation.getAnimatedValue();
@@ -157,7 +153,10 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             });
 
             animator.start();
-            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
+            if (!Game_Manager.gameFinishedState)
+                Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
+//            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
+
             isFlippedUp = true;
             isFlippedDown = false;
 
@@ -166,12 +165,13 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 backImage.setVisibility(View.INVISIBLE);
                 frontImage.setVisibility(View.VISIBLE);
 
-            }, 180);
+            }, Utilities.FLIPPING_DELAY);
 
 
         }
 
         public void flipTileDOWN (Integer tileVal) {
+            backImage.setImageBitmap(currTile.getBackImage());
 
             LinkedList<Bitmap> correspondingSequence = Utilities.CORRESPONDING_FLIP_TABLE.get(tileVal);
 
@@ -182,16 +182,16 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             ValueAnimator animator = ValueAnimator.ofInt(0, reversedSequence.size() - 1);
 
-            animator.setDuration(reversedSequence.size() * 45L);
+            animator.setDuration(reversedSequence.size() * 20L);
 
             animator.addUpdateListener(animation -> {
                 int frameIndex = (int) animation.getAnimatedValue();
-
                 frontImage.setImageBitmap(reversedSequence.get(frameIndex));
             });
 
             animator.start();
-            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
+            if (!Game_Manager.gameFinishedState)
+                Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
             isFlippedUp = false;
             isFlippedDown = true;
 
@@ -200,9 +200,7 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 frontImage.setVisibility(View.INVISIBLE);
                 backImage.setVisibility(View.VISIBLE);
 
-            }, 180);
-
-
+            }, Utilities.FLIPPING_DELAY);
         }
 
 
@@ -216,7 +214,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }).start();
             isFlippedUp = true;
             isFlippedDown = false;
-            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
+            if (!Game_Manager.gameFinishedState)
+                Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
         }
 
         public void flipDown() {
@@ -228,7 +227,8 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }).start();
             isFlippedUp = false;
             isFlippedDown = true;
-            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
+            if (!Game_Manager.gameFinishedState)
+                Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
         }
 
     }

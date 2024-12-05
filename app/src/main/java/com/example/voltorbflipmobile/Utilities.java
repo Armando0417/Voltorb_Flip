@@ -62,6 +62,10 @@ public class Utilities {
     public static final String ERROR_TAG = "Error";
     public static final String SUCCESS_TAG = "Success!";
 
+
+    public static final long FLIPPING_DELAY = 110L;     // Delay to register the flipping animation as finished
+    public static final long TILE_ANIM_DELAY = 400L;    // Delay to start the overlay animation
+
     public static final long ANIMATION_DELAY = 200L;
     public static final long ANIMATION_DURATION = 500L;
 
