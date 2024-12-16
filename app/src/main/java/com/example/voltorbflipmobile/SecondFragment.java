@@ -1,10 +1,7 @@
 package com.example.voltorbflipmobile;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
+
 import android.content.Context;
-import android.graphics.Bitmap;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -24,7 +21,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -40,7 +36,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.voltorbflipmobile.databinding.FragmentSecondBinding;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -174,6 +169,8 @@ public class SecondFragment extends Fragment {
             R.id.horizontal_connector_4
     };
 
+    AnimationManager animationManager = AnimationManager.getInstance();
+
     // ================================================================
     //                     Second Fragment Methods
     // ================================================================
@@ -210,6 +207,7 @@ public class SecondFragment extends Fragment {
         }, Handlers.GENERAL_EXCEPTION);
 
 
+        animationManager.setOverlayLayout(binding.getRoot().getRootView().findViewById(R.id.animation_overlay));
 
         return binding.getRoot();
     }
@@ -224,6 +222,7 @@ public class SecondFragment extends Fragment {
         NonScrollableGridLayoutManager layoutManager = new NonScrollableGridLayoutManager(requireContext(), 6);
         recyclerView.setLayoutManager(layoutManager);
 
+
         recyclerView.addItemDecoration(new VerticalSpacingItemDecoration(30, 6));
 
         SharedViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
@@ -233,7 +232,6 @@ public class SecondFragment extends Fragment {
                 Objects.requireNonNull(((MainActivity) getActivity()).getSupportActionBar()).setTitle("Level " + levelNum);
             }
         });
-
 
 //        int dividerColor = Color.LTGRAY; // Choose a color for your dividers
 //        int dividerThickness = 2; // Adjust thickness (in pixels) as needed
@@ -393,7 +391,7 @@ public class SecondFragment extends Fragment {
                         InsetDrawable verticalInset = new InsetDrawable(innerVertRect, vertLeftActualOffset, vertTopActualOffset, vertRightActualOffset, vertBottomActualOffset);
                         LayerDrawable verticalLayers = new LayerDrawable(new Drawable[]{vertOuterRect, verticalInset});
 
-//                        View verticalConnector = view.findViewById(getResources().getIdentifier("vertical_connector_" + finalI1, "id", requireContext().getPackageName()));
+//                      View verticalConnector = view.findViewById(getResources().getIdentifier("vertical_connector_" + finalI1, "id", requireContext().getPackageName()));
 
                         View verticalConnector = view.findViewById(verticalIDs[finalI1]);
 
@@ -401,7 +399,6 @@ public class SecondFragment extends Fragment {
                             requireActivity().runOnUiThread(() -> {
                                 verticalConnector.setLayoutParams(new FrameLayout.LayoutParams(20, vertDist + 10));
                                 verticalConnector.setX((float) locationTop[0] + (float) topTile.getWidth() / 2 - 10);
-
                                 verticalConnector.setY((float) (locationTop[1] - locationTop[1] / 2.5) - 10);
                                 verticalConnector.setBackground(verticalLayers);
 
@@ -460,69 +457,13 @@ public class SecondFragment extends Fragment {
     }
 
     public void playOverlayAnimation(int[] animationFrames, View tileView, Tiles.gameTile currentTile) {
-            Game_Manager.isInteractionAllowed = false;
-            long overlayDuration = 70L;
-
-            // Get tile's position on the screen
-            int[] location = new int[2];
-            tileView.getLocationOnScreen(location);
-            int tileX = location[0];
-            int tileY = location[1];
-
-            int[] overlayLocation = new int[2];
-            animationOverlay.getLocationOnScreen(overlayLocation);
-            int tileRelativeX = tileX - overlayLocation[0];
-            int tileRelativeY = tileY - overlayLocation[1];
-
-            List<Bitmap> preloadedFrames = (currentTile.getNumericValue() == 0)
-                    ? Utilities.DECODED_ANIM_TABLE.get(0)
-                    : Utilities.DECODED_ANIM_TABLE.get(1);
-
-            requireActivity().runOnUiThread(() -> {
-                if (preloadedFrames == null || preloadedFrames.isEmpty()) {
-                    Utilities.logError("No preloaded frames loaded, Cancelling animations");
-                    isAnimating = false;
-                    return;
-                }
-
-                // Create ImageView for animation
-                ImageView animationView = new ImageView(requireContext());
-                animationOverlay.setVisibility(View.VISIBLE);
-                animationOverlay.addView(animationView);
-
-                // Create a ValueAnimator to control the frame changes
-                ValueAnimator animator = ValueAnimator.ofInt(0, animationFrames.length - 1);
-
-                animator.setDuration(animationFrames.length * overlayDuration);
+        animationManager.triggerAnimation(requireContext(), tileView, currentTile, gm, this);
+    }
 
 
-                boolean isPoints = !(currentTile.getNumericValue() == 0);
-                int animationDelay = isPoints ? 400 : 900;
-
-                animator.addUpdateListener(animation -> {
-                    int frameIndex = (int) animation.getAnimatedValue();
-
-                    Bitmap currentBitmap = preloadedFrames.get(frameIndex);
-
-                    FrameLayout.LayoutParams params = getLayoutParams(tileView, currentTile, frameIndex);
-
-                    int offsetX = (params.width - tileView.getWidth()) / 2;
-                    int offsetY = (params.height - tileView.getHeight()) / 2;
-                    params.leftMargin = tileRelativeX - offsetX;
-                    params.topMargin = tileRelativeY - offsetY;
-
-                    animationView.setLayoutParams(params);
-
-                    animationView.setImageBitmap(currentBitmap);
-                });
-
-                animator.start();
-
-                if (currentTile.getNumericValue() == 0) {
-                    Utilities.delayedHandler( () -> Utilities.playSound(Utilities.SoundEffects.EXPLOSION_SFX), 300);
-                    Utilities.logDebug("Loss condition has been met, Triggering lose animation.");
-
-                    Utilities.delayedHandler( () -> {
+        public void gameCompleted(boolean isVictory) {
+            if (!isVictory) {
+                Utilities.delayedHandler( () -> {
                         stateLayout.setVisibility(View.VISIBLE);
                         stateLayout.setBackgroundColor(Color.argb(126, 210, 0, 0) );
                         loseText[0].setVisibility(View.VISIBLE);
@@ -536,64 +477,42 @@ public class SecondFragment extends Fragment {
                             triggerFlipAllAnim();
                         });
 
-                    }, animationDelay);
-                }
+                    }, 800);
 
-                else {
-                    Utilities.playSound(Utilities.SoundEffects.INCREASE_POINT_SFX);
-                    Utilities.delayedHandler( () -> Game_Manager.isInteractionAllowed = true, 100);
+            }
+            else {
+                Game_Manager.isInteractionAllowed = false;
 
-                }
+                 Utilities.delayedHandler( () -> {
+                     stateLayout.setVisibility(View.VISIBLE);
+                     stateLayout.setBackgroundColor(Color.argb(126, 0, 210, 0) );
+                     loseText[0].setVisibility(View.VISIBLE);
+                     loseText[0].setText(R.string.you_win);
+                     loseText[1].setVisibility(View.VISIBLE);
+                     loseText[1].setText(R.string.you_win);
 
-                animator.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        animationOverlay.removeView(animationView);
+                     stateLayout.setOnClickListener(v -> {
+                         stateLayout.setVisibility(View.GONE);
+                         triggerFlipAllAnim();
+                         try {
+                             SharedViewModel model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+                             Integer currLevel = model.getLevelNumber().getValue();
+                             if (currLevel != null) {
+                                 gm.levelUp();
+                                 model.setLevelNumber( gm.getCurrentLevel() );
+                             }
+                         }
+                         catch (Exception e) {
+                             Utilities.logError("Failure to update level number");
+                         }
 
-                        gm.getGameBoard().updateBoard(currentTile.getRowCol().first, currentTile.getRowCol().second);
+                     });
 
-                        Utilities.delayedHandler( () -> {
+                 }, 50);
+            }
 
-                             if (gm.verifyWin()) {
-                                Utilities.logDebug("Win condition has been met, Triggering win animation.");
-                                Utilities.playSound(Utilities.SoundEffects.LEVEL_COMPLETE_SFX);
-
-                                 Game_Manager.isInteractionAllowed = false;
-
-                                 Utilities.delayedHandler( () -> {
-                                     stateLayout.setVisibility(View.VISIBLE);
-                                     stateLayout.setBackgroundColor(Color.argb(126, 0, 210, 0) );
-                                     loseText[0].setVisibility(View.VISIBLE);
-                                     loseText[0].setText(R.string.you_win);
-                                     loseText[1].setVisibility(View.VISIBLE);
-                                     loseText[1].setText(R.string.you_win);
-
-                                     stateLayout.setOnClickListener(v -> {
-                                         stateLayout.setVisibility(View.GONE);
-                                         triggerFlipAllAnim();
-                                         try {
-                                             SharedViewModel model = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-                                             Integer currLevel = model.getLevelNumber().getValue();
-                                             if (currLevel != null) {
-                                                 gm.levelUp();
-                                                 model.setLevelNumber( gm.getCurrentLevel() );
-                                             }
-                                         }
-                                         catch (Exception e) {
-                                             Utilities.logError("Failure to update level number");
-                                         }
-
-                                     });
-
-                                 }, animationDelay);
-
-                                //TODO ADD A DISPLAY BUTTON TO MOVE TO A NEW LEVEL (SCORE GETS STORED AND GENERATE NEW BOARD)
-                            }
-                        }, Utilities.ANIMATION_DELAY);
-                    }
-                });
-            });
         }
+
 
 
     public void triggerFlipAllAnim() {
@@ -602,7 +521,6 @@ public class SecondFragment extends Fragment {
             showAllTiles();
             Utilities.delayedHandler( this::flipAllDown, Utilities.ANIMATION_DURATION);
         }, Utilities.ANIMATION_DURATION);
-
     }
 
     public void flipAllDown() {

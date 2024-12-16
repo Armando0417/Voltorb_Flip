@@ -111,11 +111,7 @@ public class Utilities {
     public static void loadUtilityFiles(Context context) {
         ExecutorService backgroundThread = createExecutorService(3);
 
-        CountDownLatch latch = new CountDownLatch(1);
-
-
-
-
+        CountDownLatch latch = new CountDownLatch(2);
 
         try {
 
@@ -200,6 +196,7 @@ public class Utilities {
                 CORRESPONDING_FLIP_TABLE.put (2, temp2);
                 CORRESPONDING_FLIP_TABLE.put (3, temp3);
 
+                latch.countDown();
             });
 
             backgroundThread.submit(() -> {
@@ -228,23 +225,6 @@ public class Utilities {
     // ================================================================
     //                        Utility Methods
     // ================================================================
-
-    public static void prepareFlipAnim(Integer tileValue) {
-        if (tileValue == null) {
-            Utilities.logError("Value given does not exist!");
-            return;
-        }
-        Utilities.logDebug("Image value is " + tileValue);
-
-        if (CORRESPONDING_FLIP_SEQUENCE.size() == 2) {
-            CORRESPONDING_FLIP_SEQUENCE.offerLast(TILE_FLIP_TABLE.get(tileValue));
-        }
-    }
-
-    public static void refreshFlipAnim() {
-        CORRESPONDING_FLIP_SEQUENCE.removeLast();
-    }
-
 
     public static void playSound(SoundEffects soundKey) {
         try {
@@ -287,8 +267,6 @@ public class Utilities {
         long endTime = System.currentTimeMillis();
         Log.d(taskName, "Execution time: " + (endTime - startTime) + "ms");
     }
-
-
 
     public static void delayedHandler(Runnable task, long delay) {
         new Handler(Looper.getMainLooper()).postDelayed(task, delay);

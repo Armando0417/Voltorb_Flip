@@ -97,7 +97,7 @@ public class Game_Manager {
             return;
         }
 
-        private ArrayList<Pair<Integer, Double> > generate_cumulative_probabilities(HashMap<Integer, Double> normalized) {
+        private ArrayList< Pair<Integer, Double> > generate_cumulative_probabilities(HashMap<Integer, Double> normalized) {
             ArrayList<Pair<Integer, Double> > cumulative_probabilities = new ArrayList<>();
             double cumulative_prob = 0;
             for (Map.Entry<Integer, Double> pair : normalized.entrySet()) {
@@ -142,7 +142,7 @@ public class Game_Manager {
             for (int rowIndex = 0; rowIndex < BOARD_SIZE; rowIndex++) {
                 for (int columnIndex = 0; columnIndex < BOARD_SIZE; columnIndex++) {
 
-                    if (rowIndex == GRID_SIZE && columnIndex == GRID_SIZE) {
+                    if ( (rowIndex == GRID_SIZE) && (columnIndex == GRID_SIZE) ) {
                         continue;
                     }
 
@@ -431,9 +431,6 @@ public class Game_Manager {
     public final int screenWidth;
     public static final int BOARD_SIZE = 6;
 
-    private static CountDownTimer countDownTimer;
-    public static boolean isTimerRunning = false;
-    public static boolean isLosingState = false;
     public static boolean isWinningState = false;
 
     public static boolean isInteractionAllowed = true;
@@ -441,6 +438,7 @@ public class Game_Manager {
     public static boolean gameFinishedState = false;
 
     public int levelNumber = 1;
+    public boolean scoreUpdated = false;
 
     public Game_Manager(View _score_board, int _screenWidth) {
         this.score_boardView = _score_board;
@@ -452,7 +450,7 @@ public class Game_Manager {
         this.screenWidth = _screenWidth;
 
         gameBoard = new Board(levelNumber);
-
+        isInteractionAllowed = true;
         loadScoreViews();
 
     }
@@ -475,7 +473,9 @@ public class Game_Manager {
     public Board getGameBoard() {
         return gameBoard;
     }
-
+    public boolean isScoreUpdated() {
+        return scoreUpdated;
+    }
     public int getCurrentLevel() {
         return levelNumber;
     }
@@ -518,10 +518,13 @@ public void loadScoreViews() {
     }
 
     public void prepareNumber(int num) {
+        int prevScore = currScore;
         currScore = num * currScore;
+
         if (currScore == 0) {
             currScore = num;
         }
+        scoreUpdated = currScore != prevScore;
 
         scoreText = String.valueOf(currScore);
 
@@ -551,9 +554,7 @@ public void loadScoreViews() {
                     },
                     Handlers.NULL_POINTER_EXCEPTION
             );
-
         }
-
     }
 
     public boolean verifyLoss() {

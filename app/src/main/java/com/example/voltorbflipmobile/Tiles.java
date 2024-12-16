@@ -40,7 +40,7 @@ public class Tiles {
             backImage = Utilities.IMAGE_TABLE.get(4);
             horizPipeColor = new int[3];
             vertPipeColor = new int[3];
-
+            setValueImage(value);
         }
         // Getters
         @Override
@@ -64,19 +64,6 @@ public class Tiles {
         }
         Utilities.TileTypes getType() {
             return value;
-        }
-
-        void update() {
-            if (isFlipping) {
-                rotationAngle += 10;
-                Log.d("Rotation Angle changing", String.valueOf(rotationAngle));
-                if (rotationAngle >= 180) {
-                    Log.d("Rotation Angle Finished", "");
-                    rotationAngle = 180.0F;
-                    isFlipping = false;
-                    flipped = true;
-                }
-            }
         }
 
         Bitmap getFrontImage() {
@@ -126,6 +113,21 @@ public class Tiles {
         public int getVertColor() {
             return Color.rgb(vertPipeColor[0], vertPipeColor[1], vertPipeColor[2]);
         }
+
+
+        void activateOverlayAnimation() {
+
+        }
+
+
+
+
+
+
+
+
+
+
 
     }
 

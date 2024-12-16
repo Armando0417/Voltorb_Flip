@@ -33,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Utilities.loadUtilityFiles(this);
+
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -68,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         background_song.setLooping(true);
         background_song.setVolume(0.3f, 0.3f);
 
-        Utilities.loadUtilityFiles(this);
+
     }
 
     @Override
@@ -116,6 +118,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+
+
         super.onDestroy();
         if (background_song != null) {
             background_song.release();

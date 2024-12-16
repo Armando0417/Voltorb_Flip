@@ -1,40 +1,40 @@
 package com.example.voltorbflipmobile;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.Looper;
 
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import android.view.autofill.AutofillId;
-import android.widget.FrameLayout;
+
 import android.widget.ImageView;
 
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.fragment.app.Fragment;
+
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 
-
 public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final ArrayList<ArrayList<Tiles.Tile>> board;
 
     private static final int GAME_TILE = 0;
     private static final int INFO_TILE = 1;
-    public final SecondFragment fragment;
+    public final Fragment fragment;
 
-    public TileAdapter(ArrayList<ArrayList<Tiles.Tile>> board, SecondFragment fragment) {
+    public TileAdapter(ArrayList<ArrayList<Tiles.Tile>> board, Fragment _fragment) {
         this.board = board;
-        this.fragment = fragment;
+        this.fragment = _fragment;
     }
 
     @Override
@@ -97,11 +97,10 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     -------------------------*/
 
     public static class GameTileHolder extends RecyclerView.ViewHolder {
-        private final ImageView frontImage;
-        private final ImageView backImage;
+        public final ImageView frontImage;
+        public final ImageView backImage;
         public boolean isFlippedUp = false;
         public boolean isFlippedDown = true;
-
         private Tiles.gameTile currTile;
 
         public GameTileHolder(@NonNull View itemView) {
@@ -111,37 +110,42 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         }
 
-        public void bind(Tiles.gameTile tile, SecondFragment currFragment) {
+        public void bind(Tiles.gameTile tile, Fragment currFragment) {
             currTile = tile;
             backImage.setImageBitmap(tile.getBackImage());
             frontImage.setImageBitmap(tile.getFrontImage());
             int[] animationFrames = tile.getAnimationFrames();
 
-            backImage.setOnClickListener(v -> {
-                if (Game_Manager.isInteractionAllowed) {
-                    Game_Manager.isInteractionAllowed = false;
 
-                    flipTileUP( tile.getType().ordinal() );
-                    
-                    Utilities.delayedHandler( () -> {
-                        Utilities.tryCatch( () -> {
-                            currFragment.playOverlayAnimation(animationFrames, itemView, tile);
-                        }, Handlers.RUNTIME_EXCEPTION);
+            if (currFragment instanceof SecondFragment) {
 
-                    }, 250);
-                }
+                backImage.setOnClickListener(v -> {
+                    if (Game_Manager.isInteractionAllowed) {
+                        Game_Manager.isInteractionAllowed = false;
 
-                else {
-                    Utilities.logError("Interaction is not allowed yet.");
-                }
-            });
+                        flipTileUP( tile.getType().ordinal() );
+
+                        Utilities.delayedHandler( () -> {
+                            Utilities.tryCatch( () -> {
+                                SecondFragment fragment = (SecondFragment) currFragment;
+                                fragment.playOverlayAnimation(animationFrames, itemView, tile);
+                            }, Handlers.RUNTIME_EXCEPTION);
+
+                        }, 200);
+                    }
+
+                    else {
+                        Utilities.logError("Interaction is not allowed yet.");
+                    }
+                });
+            }
         }
 
         public void flipTileUP (Integer tileVal) {
 
             LinkedList<Bitmap> correspondingSequence = Utilities.CORRESPONDING_FLIP_TABLE.get(tileVal);
-
             assert correspondingSequence != null;
+
             ValueAnimator animator = ValueAnimator.ofInt(0, correspondingSequence.size() - 1);
 
                 animator.setDuration(correspondingSequence.size() * 35L);
@@ -153,20 +157,23 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             });
 
             animator.start();
-            if (!Game_Manager.gameFinishedState)
-                Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
-//            Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
 
-            isFlippedUp = true;
-            isFlippedDown = false;
+            animator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    if (!Game_Manager.gameFinishedState)
+                        Utilities.playSound(Utilities.SoundEffects.FLIP_TILE_SFX);
 
-            Utilities.delayedHandler( () -> {
-                backImage.setImageBitmap(currTile.getBackImage());
-                backImage.setVisibility(View.INVISIBLE);
-                frontImage.setVisibility(View.VISIBLE);
+                    backImage.setImageBitmap(currTile.getBackImage());
+                    backImage.setVisibility(View.INVISIBLE);
+                    frontImage.setVisibility(View.VISIBLE);
 
-            }, Utilities.FLIPPING_DELAY);
+                    isFlippedUp = true;
+                    isFlippedDown = false;
 
+                    updateTileImage();
+                }
+            });
 
         }
 
@@ -202,6 +209,20 @@ public class TileAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             }, Utilities.FLIPPING_DELAY);
         }
+
+        public void updateTileImage() {
+            if (isFlippedDown) {
+                frontImage.setImageBitmap(currTile.getFrontImage());
+                frontImage.setVisibility(View.INVISIBLE);
+                backImage.setVisibility(View.VISIBLE);
+            }
+            else {
+                backImage.setImageBitmap(currTile.getBackImage());
+                backImage.setVisibility(View.INVISIBLE);
+                frontImage.setVisibility(View.VISIBLE);
+            }
+        }
+
 
 
         public void flipUp() {
